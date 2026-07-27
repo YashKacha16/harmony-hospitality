@@ -6,6 +6,9 @@ import { Label } from "@/components/ui/label";
 import { useTheme } from "@/lib/theme";
 import { Sun, Moon, ArrowRight, Sparkles } from "lucide-react";
 
+import { toast } from "sonner";
+import { authService } from "@/api";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
@@ -23,6 +26,7 @@ function LoginPage() {
   const { theme, toggle } = useTheme();
   const [email, setEmail] = useState("manager@aurelia.co");
   const [pw, setPw] = useState("aurelia•2026");
+  const [loading, setLoading] = useState(false);
 
   return (
     <div className="min-h-screen grid lg:grid-cols-2 bg-background">
@@ -88,23 +92,36 @@ function LoginPage() {
             <p className="text-muted-foreground mb-8">Manage your property with clarity and calm.</p>
 
             <form
-              onSubmit={(e) => { e.preventDefault(); nav({ to: "/dashboard" }); }}
+              onSubmit={async (e) => {
+                e.preventDefault();
+                setLoading(true);
+                try {
+                  const res = await authService.login({ email, password: pw });
+                  localStorage.setItem("user", JSON.stringify(res.employee));
+                  toast.success("Welcome back, " + res.employee.name);
+                  nav({ to: "/dashboard" });
+                } catch (err: any) {
+                  toast.error(err.message || "Invalid credentials");
+                } finally {
+                  setLoading(false);
+                }
+              }}
               className="space-y-5"
             >
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 rounded-xl" />
+                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 rounded-xl" required />
               </div>
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <Label htmlFor="pw">Password</Label>
                   <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
                 </div>
-                <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} className="h-12 rounded-xl" />
+                <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} className="h-12 rounded-xl" required />
               </div>
 
-              <Button type="submit" className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 group copper-glow">
-                Enter workspace
+              <Button type="submit" disabled={loading} className="w-full h-12 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 group copper-glow">
+                {loading ? "Signing in..." : "Enter workspace"}
                 <ArrowRight className="size-4 ml-1 transition-transform group-hover:translate-x-0.5" />
               </Button>
 

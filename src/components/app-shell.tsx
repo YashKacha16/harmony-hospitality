@@ -157,8 +157,21 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
   );
 }
 
+import { authService } from "@/api";
+
 function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
   const { theme, toggle } = useTheme();
+
+  const getPhotoUrl = (path?: string) => {
+    if (!path) return undefined;
+    if (path.startsWith("http")) return path;
+    return `http://localhost:5157${path}`;
+  };
+
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { name: "Marcus Ellery", role: "Admin", email: "manager@aurelia.co", photoPath: undefined };
+  const photoPath = user.photoPath || user.PhotoPath;
+
   return (
     <header className="sticky top-0 z-30 bg-background/80 backdrop-blur-xl border-b border-border">
       <div className="h-16 px-4 md:px-6 flex items-center gap-3">
@@ -210,14 +223,14 @@ function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
           <DropdownMenuTrigger asChild>
             <button className="flex items-center gap-3 pl-2 pr-1 h-10 rounded-xl hover:bg-muted/60 transition">
               <Avatar className="size-8">
-                <AvatarImage src="https://i.pravatar.cc/80?img=12" />
-                <AvatarFallback>ME</AvatarFallback>
+                <AvatarImage src={getPhotoUrl(photoPath)} />
+                <AvatarFallback>{user.name ? user.name[0] : "ME"}</AvatarFallback>
               </Avatar>
               <div className="hidden sm:block text-left">
-                <div className="text-sm font-medium leading-none">Marcus Ellery</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">General Manager</div>
+                <div className="text-sm font-medium leading-none">{user.name}</div>
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">{user.email}</div>
               </div>
-              <Badge variant="secondary" className="hidden md:inline-flex text-[10px] bg-primary/10 text-primary border-primary/20">Admin</Badge>
+              <Badge variant="secondary" className="hidden md:inline-flex text-[10px] bg-primary/10 text-primary border-primary/20">{user.role}</Badge>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
@@ -226,8 +239,16 @@ function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
             <DropdownMenuItem>Profile</DropdownMenuItem>
             <DropdownMenuItem>Preferences</DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link to="/" className="flex items-center gap-2"><LogOut className="size-4" /> Sign out</Link>
+            <DropdownMenuItem onSelect={async () => {
+              try {
+                await authService.logout();
+              } catch (e) {
+                console.error("Logout request failed", e);
+              }
+              localStorage.removeItem("user");
+              window.location.href = "/";
+            }} className="flex items-center gap-2 cursor-pointer">
+              <LogOut className="size-4" /> Sign out
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

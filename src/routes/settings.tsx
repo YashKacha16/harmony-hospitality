@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
@@ -11,6 +12,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/lib/theme";
+import { getTaxSettings, saveTaxSettings } from "@/lib/taxSettings";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Aurelia" }, { name: "description", content: "Property configuration: branding, taxes, cancellation tiers, notifications and theme." }] }),
@@ -19,6 +21,19 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const { theme, setTheme } = useTheme();
+
+  const [taxConfig, setTaxConfig] = useState(() => getTaxSettings());
+
+  const handleSaveTax = () => {
+    saveTaxSettings({
+      currency: taxConfig.currency,
+      serviceChargePercent: Number(taxConfig.serviceChargePercent) || 0,
+      cgstPercent: Number(taxConfig.cgstPercent) || 0,
+      sgstPercent: Number(taxConfig.sgstPercent) || 0,
+    });
+    toast.success("Tax & currency settings saved successfully");
+  };
+
   return (
     <AppShell title="Settings" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Settings" }]}>
       <Tabs defaultValue="general">
@@ -44,14 +59,45 @@ function SettingsPage() {
           <Card className="p-6 rounded-2xl space-y-3">
             <div className="font-serif text-lg">Tax & currency</div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>Currency</Label><Input defaultValue="USD ($)" className="rounded-xl mt-1" /></div>
-              <div><Label>Service charge %</Label><Input defaultValue="10" className="rounded-xl mt-1" /></div>
+              <div>
+                <Label>Currency</Label>
+                <Input 
+                  value={taxConfig.currency} 
+                  onChange={(e) => setTaxConfig(prev => ({ ...prev, currency: e.target.value }))}
+                  className="rounded-xl mt-1" 
+                />
+              </div>
+              <div>
+                <Label>Service charge %</Label>
+                <Input 
+                  type="number"
+                  value={taxConfig.serviceChargePercent} 
+                  onChange={(e) => setTaxConfig(prev => ({ ...prev, serviceChargePercent: parseFloat(e.target.value) || 0 }))}
+                  className="rounded-xl mt-1" 
+                />
+              </div>
             </div>
             <div className="grid grid-cols-2 gap-3">
-              <div><Label>CGST %</Label><Input defaultValue="9" className="rounded-xl mt-1" /></div>
-              <div><Label>SGST %</Label><Input defaultValue="9" className="rounded-xl mt-1" /></div>
+              <div>
+                <Label>CGST %</Label>
+                <Input 
+                  type="number"
+                  value={taxConfig.cgstPercent} 
+                  onChange={(e) => setTaxConfig(prev => ({ ...prev, cgstPercent: parseFloat(e.target.value) || 0 }))}
+                  className="rounded-xl mt-1" 
+                />
+              </div>
+              <div>
+                <Label>SGST %</Label>
+                <Input 
+                  type="number"
+                  value={taxConfig.sgstPercent} 
+                  onChange={(e) => setTaxConfig(prev => ({ ...prev, sgstPercent: parseFloat(e.target.value) || 0 }))}
+                  className="rounded-xl mt-1" 
+                />
+              </div>
             </div>
-            <Button className="rounded-xl bg-primary text-primary-foreground" onClick={() => toast.success("Settings saved")}>Save</Button>
+            <Button className="rounded-xl bg-primary text-primary-foreground" onClick={handleSaveTax}>Save</Button>
           </Card>
         </TabsContent>
 

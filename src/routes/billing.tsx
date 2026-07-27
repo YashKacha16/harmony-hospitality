@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer, Send, Search, FileDown } from "lucide-react";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { billingService } from "@/api/services/billingService";
 
 export const Route = createFileRoute("/billing")({
   head: () => ({ meta: [{ title: "Billing — Aurelia" }, { name: "description", content: "Room and restaurant invoices with tax breakdown, split bills and payment tracking." }] }),
@@ -14,6 +16,32 @@ export const Route = createFileRoute("/billing")({
 });
 
 function BillingPage() {
+  const queryClient = useQueryClient();
+  const { data: bills, isLoading } = useQuery({
+    queryKey: ['restaurantBills'],
+    queryFn: () => billingService.getBills()
+  });
+
+  const payBillMutation = useMutation({
+    mutationFn: ({ id, method }: { id: number, method: string }) => billingService.payBill(id, method),
+    onSuccess: () => {
+      toast.success("Bill marked as paid");
+      queryClient.invalidateQueries({ queryKey: ['restaurantBills'] });
+    }
+  });
+
+  const updateBillMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: { serviceChargePercent?: number; taxPercent?: number; discount?: number } }) =>
+      billingService.updateBill(id, data),
+    onSuccess: () => {
+      toast.success("Bill updated successfully");
+      queryClient.invalidateQueries({ queryKey: ['restaurantBills'] });
+    },
+    onError: (err: any) => {
+      toast.error(err.message || "Failed to update bill");
+    }
+  });
+
   return (
     <AppShell title="Billing" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Billing" }]}>
       <Tabs defaultValue="room">
@@ -71,7 +99,7 @@ function BillingPage() {
               </div>
               <div className="flex gap-2">
                 <Select><SelectTrigger className="w-32 rounded-lg"><SelectValue placeholder="Card" /></SelectTrigger>
-                  <SelectContent><SelectItem value="cash">Cash</SelectItem><SelectItem value="card">Card</SelectItem><SelectItem value="upi">UPI</SelectItem><SelectItem value="online">Online</SelectItem></SelectContent>
+                  <SelectContent><SelectItem value="Cash">Cash</SelectItem><SelectItem value="Card">Card</SelectItem><SelectItem value="UPI">UPI</SelectItem></SelectContent>
                 </Select>
                 <Button className="rounded-lg bg-primary text-primary-foreground copper-glow" onClick={() => toast.success("Bill generated & marked paid")}>Generate & mark paid</Button>
               </div>
@@ -82,32 +110,143 @@ function BillingPage() {
         </TabsContent>
 
         <TabsContent value="rest">
-          <Card className="p-6 rounded-2xl">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="font-serif text-2xl">Invoice BL-2202 · Split</div>
-                <div className="text-xs text-muted-foreground">Table 4+5 · Party of 8 · Merged group</div>
-              </div>
-              <StatusBadge status="Paid" />
-            </div>
-            <div className="grid md:grid-cols-2 gap-4">
-              {[
-                { title: "Split A · T-4 (4 guests)", total: 218 },
-                { title: "Split B · T-5 (4 guests)", total: 176 },
-              ].map((s, i) => (
-                <Card key={i} className="p-4 rounded-xl bg-muted/30">
-                  <div className="font-medium">{s.title}</div>
-                  <ul className="text-sm mt-2 space-y-1">
-                    <li className="flex justify-between"><span>1× Wagyu Ribeye</span><span>$62</span></li>
-                    <li className="flex justify-between"><span>2× Old Fashioned</span><span>$32</span></li>
-                    <li className="flex justify-between"><span>1× Chef's Tasting</span><span>$120</span></li>
-                    <li className="flex justify-between text-muted-foreground line-through"><span>2× Valrhona Fondant</span><span>Cancelled</span></li>
+          <div className="space-y-4">
+            {isLoading ? (
+              <div className="text-center p-8 text-muted-foreground">Loading bills...</div>
+            ) : bills?.length === 0 ? (
+              <div className="text-center p-8 text-muted-foreground border border-dashed border-border rounded-2xl">No restaurant bills generated yet.</div>
+            ) : bills?.map(bill => (
+              <Card key={bill.id} className="p-6 rounded-2xl">
+                <div className="flex items-start justify-between mb-4">
+                  <div>
+                    <div className="font-serif text-2xl">Invoice {bill.billNumber}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {bill.order?.type === "DineIn" && `Table ${bill.order.tableName || "--"}`}
+                      {bill.order?.type === "RoomService" && `Room ${bill.order.roomNumber || "--"}`}
+                      {bill.order?.type === "Parcel" && (bill.order.parcelCode ? `Parcel (Code: ${bill.order.parcelCode})` : "Parcel")}
+                    </div>
+                  </div>
+                  <StatusBadge status={bill.status} />
+                </div>
+                
+                <div className="border-t border-border mt-4 pt-4">
+                  <div className="font-medium mb-2">Order Items</div>
+                  <ul className="text-sm space-y-1">
+                    {bill.order?.items.map((item, idx) => (
+                      <li key={idx} className="flex justify-between">
+                        <span>{item.quantity}× {item.name} {item.status === 'Cancelled' ? '(Cancelled)' : ''}</span>
+                        <span className={item.status === 'Cancelled' ? 'line-through text-muted-foreground' : ''}>${(item.priceAtOrder * item.quantity).toFixed(2)}</span>
+                      </li>
+                    ))}
                   </ul>
-                  <div className="mt-3 pt-3 border-t border-border flex justify-between font-medium"><span>Total</span><span className="text-primary">${s.total}</span></div>
-                </Card>
-              ))}
-            </div>
-          </Card>
+                  
+                  <div className="mt-4 pt-3 border-t border-border w-72 ml-auto text-sm space-y-1">
+                    <Row l="Subtotal" v={`$${bill.subtotal.toFixed(2)}`} />
+                    <Row l={`Service charge (${bill.serviceChargePercent ?? 10}%)`} v={`$${bill.serviceCharge.toFixed(2)}`} />
+                    <Row l={`Tax (${bill.taxPercent ?? 18}%)`} v={`$${bill.taxAmount.toFixed(2)}`} />
+                    {bill.discount > 0 && <Row l="Discount" v={`-$${bill.discount.toFixed(2)}`} tone="text-success" />}
+                    <div className="border-t border-border pt-2 mt-2 flex justify-between font-serif text-lg">
+                      <span>Total due</span>
+                      <span className="text-primary">${bill.totalAmount.toFixed(2)}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {bill.status !== "Paid" && (
+                  <div className="mt-6 pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 flex-wrap text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground font-medium">Discount ($):</span>
+                        <Input
+                          type="number"
+                          placeholder="0"
+                          className="w-20 h-8 rounded-lg text-xs"
+                          defaultValue={bill.discount || 0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const val = parseFloat((e.target as HTMLInputElement).value) || 0;
+                              updateBillMutation.mutate({ id: bill.id, data: { discount: val } });
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (val !== bill.discount) {
+                              updateBillMutation.mutate({ id: bill.id, data: { discount: val } });
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground font-medium">Service %:</span>
+                        <Input
+                          type="number"
+                          placeholder="10"
+                          className="w-16 h-8 rounded-lg text-xs"
+                          defaultValue={bill.serviceChargePercent ?? 10}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const val = parseFloat((e.target as HTMLInputElement).value) || 0;
+                              updateBillMutation.mutate({ id: bill.id, data: { serviceChargePercent: val } });
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (val !== (bill.serviceChargePercent ?? 10)) {
+                              updateBillMutation.mutate({ id: bill.id, data: { serviceChargePercent: val } });
+                            }
+                          }}
+                        />
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-muted-foreground font-medium">Tax %:</span>
+                        <Input
+                          type="number"
+                          placeholder="18"
+                          className="w-16 h-8 rounded-lg text-xs"
+                          defaultValue={bill.taxPercent ?? 18}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter') {
+                              const val = parseFloat((e.target as HTMLInputElement).value) || 0;
+                              updateBillMutation.mutate({ id: bill.id, data: { taxPercent: val } });
+                            }
+                          }}
+                          onBlur={(e) => {
+                            const val = parseFloat(e.target.value) || 0;
+                            if (val !== (bill.taxPercent ?? 18)) {
+                              updateBillMutation.mutate({ id: bill.id, data: { taxPercent: val } });
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end items-center gap-3">
+                      <Select defaultValue="Card" onValueChange={(val) => {
+                        (window as any)[`payMethod_${bill.id}`] = val;
+                      }}>
+                        <SelectTrigger className="w-32 rounded-lg"><SelectValue placeholder="Card" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Cash">Cash</SelectItem>
+                          <SelectItem value="Card">Card</SelectItem>
+                          <SelectItem value="UPI">UPI</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Button 
+                        className="rounded-lg bg-primary text-primary-foreground copper-glow" 
+                        onClick={() => {
+                          const method = (window as any)[`payMethod_${bill.id}`] || 'Card';
+                          payBillMutation.mutate({ id: bill.id, method });
+                        }}
+                        disabled={payBillMutation.isPending}
+                      >
+                        {payBillMutation.isPending ? "Processing..." : "Mark as Paid"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </Card>
+            ))}
+          </div>
         </TabsContent>
       </Tabs>
     </AppShell>

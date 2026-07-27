@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell, StatusBadge } from "@/components/app-shell";
-import { employees } from "@/lib/mock-data";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { employeeService } from "@/api";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -12,14 +13,45 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Upload, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
 
 export const Route = createFileRoute("/employees")({
   head: () => ({ meta: [{ title: "Employees — Aurelia" }, { name: "description", content: "Team directory, roles, shifts and attendance for hotel & restaurant staff." }] }),
   component: EmpPage,
 });
 
+const getPhotoUrl = (path?: string) => {
+  if (!path) return undefined;
+  if (path.startsWith('http')) return path;
+  return `http://localhost:5157${path}`;
+};
+
 function EmpPage() {
   const shifts = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+  const queryClient = useQueryClient();
+
+  const { data: employees = [], isLoading } = useQuery({
+    queryKey: ["employees"],
+    queryFn: employeeService.getAll
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: ({ id, employee }: { id: number; employee: any }) => employeeService.update(id, employee),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      toast.success("Employee updated successfully");
+    },
+    onError: () => toast.error("Failed to update employee")
+  });
+
+  if (isLoading) {
+    return (
+      <AppShell title="Employees" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Employees" }]}>
+        <div className="flex items-center justify-center h-64">Loading employees...</div>
+      </AppShell>
+    );
+  }
+
   return (
     <AppShell title="Employees" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Employees" }]}>
       <div className="flex justify-end mb-4"><AddEmpSheet /></div>
@@ -34,7 +66,7 @@ function EmpPage() {
           {employees.map(e => (
             <Card key={e.id} className="p-5 rounded-2xl">
               <div className="flex items-center gap-3">
-                <Avatar className="size-14"><AvatarImage src={e.photo} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>
+                <Avatar className="size-14"><AvatarImage src={getPhotoUrl(e.photoPath)} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="font-medium truncate">{e.name}</div>
                   <div className="text-xs text-muted-foreground">{e.role}</div>
@@ -42,14 +74,15 @@ function EmpPage() {
                 <StatusBadge status={e.status} />
               </div>
               <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5"><Phone className="size-3" /> {e.contact}</div>
-                <div>Shift: <span className="text-foreground">{e.shift}</span></div>
+                <div className="flex items-center gap-1.5"><Phone className="size-3" /> {e.email}</div>
+                <div>Joined: <span className="text-foreground">{e.joined}</span></div>
               </div>
-              <div className="mt-3">
-                <Select defaultValue={e.role}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs"><SelectValue /></SelectTrigger>
+              <div className="mt-3 flex gap-2">
+                <Select defaultValue={e.role} onValueChange={(val: string) => updateMutation.mutate({ id: e.id!, employee: { ...e, role: val } })}>
+                  <SelectTrigger className="h-8 rounded-lg text-xs flex-1"><SelectValue /></SelectTrigger>
                   <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                 </Select>
+                <EditEmpSheet employee={e} />
               </div>
             </Card>
           ))}
@@ -67,7 +100,7 @@ function EmpPage() {
               <tbody>
                 {employees.map((e, ei) => (
                   <tr key={e.id} className="border-t border-border">
-                    <td className="px-3 py-2 flex items-center gap-2"><Avatar className="size-6"><AvatarImage src={e.photo} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>{e.name}</td>
+                    <td className="px-3 py-2 flex items-center gap-2"><Avatar className="size-6"><AvatarImage src={getPhotoUrl(e.photoPath)} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>{e.name}</td>
                     {shifts.map((_, i) => {
                       const state = (ei + i) % 5 === 0 ? "off" : (ei + i) % 7 === 0 ? "leave" : "on";
                       return (
@@ -98,31 +131,148 @@ function EmpPage() {
 }
 
 function AddEmpSheet() {
+  const [open, setOpen] = useState(false);
+  const [role, setRole] = useState("Waiter");
+  const queryClient = useQueryClient();
+
+  const createMutation = useMutation({
+    mutationFn: (emp: any) => employeeService.create(emp),
+    onError: () => toast.error("Failed to add employee")
+  });
+
+  const photoMutation = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => employeeService.uploadPhoto(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    },
+    onError: () => toast.error("Failed to upload employee photo")
+  });
+
   return (
-    <Sheet>
+    <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild><Button className="rounded-xl bg-primary text-primary-foreground copper-glow"><Plus className="size-4 mr-1" /> Add employee</Button></SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader><SheetTitle className="font-serif text-2xl">New employee</SheetTitle></SheetHeader>
-        <form className="mt-6 space-y-3 px-4" onSubmit={(e) => { e.preventDefault(); toast.success("Employee added"); }}>
-          <div><Label>Photo</Label><div className="mt-1 h-20 rounded-xl border-2 border-dashed flex items-center justify-center gap-2 text-xs text-muted-foreground"><Upload className="size-4" /> Upload</div></div>
-          <div><Label>Name</Label><Input className="rounded-xl mt-1" /></div>
+        <form className="mt-6 space-y-3 px-4" autoComplete="off" onSubmit={async (e) => {
+          e.preventDefault();
+          const formData = new FormData(e.currentTarget);
+          
+          const newEmp = {
+            name: formData.get("name"),
+            email: formData.get("email"),
+            password: formData.get("password") || "123456",
+            role: role,
+            status: "Active",
+            joined: formData.get("joined") || new Date().toISOString().split('T')[0]
+          };
+
+          try {
+            const created = await createMutation.mutateAsync(newEmp);
+            
+            const fileInput = formData.get("photo") as File;
+            if (fileInput && fileInput.size > 0 && created.id) {
+              await photoMutation.mutateAsync({ id: created.id, file: fileInput });
+            }
+            
+            queryClient.invalidateQueries({ queryKey: ["employees"] });
+            toast.success("Employee added successfully");
+            setOpen(false);
+          } catch (err) {
+            // Error handled by mutations
+          }
+        }}>
+          <div>
+            <Label>Photo</Label>
+            <Input name="photo" type="file" accept="image/*" className="rounded-xl mt-1" />
+          </div>
+          <div><Label>Name</Label><Input name="name" className="rounded-xl mt-1" required autoComplete="off" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Contact</Label><Input className="rounded-xl mt-1" /></div>
-            <div><Label>Email</Label><Input type="email" className="rounded-xl mt-1" /></div>
+            <div><Label>Email</Label><Input name="email" type="email" className="rounded-xl mt-1" required autoComplete="off" /></div>
+            <div><Label>Password</Label><Input name="password" type="password" className="rounded-xl mt-1" required autoComplete="new-password" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Role</Label><Select><SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Waiter" /></SelectTrigger>
-              <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-            </Select></div>
-            <div><Label>Shift</Label><Select><SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Morning" /></SelectTrigger>
-              <SelectContent><SelectItem value="m">Morning</SelectItem><SelectItem value="e">Evening</SelectItem><SelectItem value="n">Night</SelectItem></SelectContent>
-            </Select></div>
+            <div><Label>Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Waiter" /></SelectTrigger>
+                <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Joining date</Label><Input name="joined" type="date" className="rounded-xl mt-1" /></div>
           </div>
+          <Button className="w-full rounded-xl bg-primary text-primary-foreground copper-glow mt-4">Add employee</Button>
+        </form>
+      </SheetContent>
+    </Sheet>
+  );
+}
+
+function EditEmpSheet({ employee }: { employee: any }) {
+  const [open, setOpen] = useState(false);
+  const queryClient = useQueryClient();
+  const updateMutation = useMutation({
+    mutationFn: ({ id, emp }: { id: number; emp: any }) => employeeService.update(id, emp),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+      toast.success("Employee updated successfully");
+      setOpen(false);
+    },
+    onError: () => toast.error("Failed to update employee")
+  });
+
+  const photoMutation = useMutation({
+    mutationFn: ({ id, file }: { id: number; file: File }) => employeeService.uploadPhoto(id, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["employees"] });
+    },
+    onError: () => toast.error("Failed to upload photo")
+  });
+
+  return (
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild><Button variant="outline" size="sm" className="h-8 rounded-lg text-xs">Edit</Button></SheetTrigger>
+      <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetHeader><SheetTitle className="font-serif text-2xl">Edit employee</SheetTitle></SheetHeader>
+        <form className="mt-6 space-y-3 px-4" onSubmit={(e) => { 
+          e.preventDefault(); 
+          const formData = new FormData(e.currentTarget);
+
+          const fileInput = formData.get("photo") as File;
+          if (fileInput && fileInput.size > 0) {
+            photoMutation.mutate({ id: employee.id, file: fileInput });
+          }
+
+          const updatedEmp = {
+            ...employee,
+            name: formData.get("name"),
+            email: formData.get("email"),
+            role: formData.get("role"),
+            status: formData.get("status"),
+            joined: formData.get("joined")
+          };
+          updateMutation.mutate({ id: employee.id, emp: updatedEmp });
+        }}>
+          <div>
+            <Label>Photo</Label>
+            <Input name="photo" type="file" accept="image/*" className="rounded-xl mt-1" />
+          </div>
+          <div><Label>Name</Label><Input name="name" defaultValue={employee.name} className="rounded-xl mt-1" /></div>
+          <div><Label>Email</Label><Input name="email" type="email" defaultValue={employee.email} className="rounded-xl mt-1" /></div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Joining date</Label><Input type="date" className="rounded-xl mt-1" /></div>
-            <div><Label>Salary</Label><Input placeholder="$0" className="rounded-xl mt-1" /></div>
+            <div><Label>Role</Label>
+              <Select name="role" defaultValue={employee.role}>
+                <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div><Label>Status</Label>
+              <Select name="status" defaultValue={employee.status || "Active"}>
+                <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
+                <SelectContent><SelectItem value="Active">Active</SelectItem><SelectItem value="Inactive">Inactive</SelectItem><SelectItem value="On Leave">On Leave</SelectItem></SelectContent>
+              </Select>
+            </div>
           </div>
-          <Button className="w-full rounded-xl bg-primary text-primary-foreground copper-glow">Add employee</Button>
+          <div><Label>Joining date</Label><Input name="joined" defaultValue={employee.joined} type="date" className="rounded-xl mt-1" /></div>
+          <Button className="w-full rounded-xl bg-primary text-primary-foreground copper-glow mt-4">Save changes</Button>
         </form>
       </SheetContent>
     </Sheet>

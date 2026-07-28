@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { Card } from "@/components/ui/card";
@@ -12,7 +12,9 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
 import { useTheme } from "@/lib/theme";
-import { getTaxSettings, saveTaxSettings } from "@/lib/taxSettings";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { settingsService, GeneralSettings } from "@/api/services/settingsService";
+import { BASE_URL } from "@/api/apiClient";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Aurelia" }, { name: "description", content: "Property configuration: branding, taxes, cancellation tiers, notifications and theme." }] }),
@@ -21,17 +23,57 @@ export const Route = createFileRoute("/settings")({
 
 function SettingsPage() {
   const { theme, setTheme } = useTheme();
+  const queryClient = useQueryClient();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [taxConfig, setTaxConfig] = useState(() => getTaxSettings());
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+    staleTime: 1000 * 60 * 5,
+  });
 
-  const handleSaveTax = () => {
-    saveTaxSettings({
-      currency: taxConfig.currency,
-      serviceChargePercent: Number(taxConfig.serviceChargePercent) || 0,
-      cgstPercent: Number(taxConfig.cgstPercent) || 0,
-      sgstPercent: Number(taxConfig.sgstPercent) || 0,
-    });
-    toast.success("Tax & currency settings saved successfully");
+  const [form, setForm] = useState<Partial<GeneralSettings>>({});
+
+  // Initialize form when data loads
+  if (settings && !form.name && !form.currency) {
+    setForm({ ...settings });
+  }
+
+  const updateMutation = useMutation({
+    mutationFn: (data: GeneralSettings) => settingsService.updateGeneralSettings(data),
+    onSuccess: (updatedSettings) => {
+      queryClient.setQueryData(["settings"], updatedSettings);
+      toast.success("Settings saved successfully");
+    },
+    onError: () => {
+      toast.error("Failed to save settings");
+    },
+  });
+
+  const uploadLogoMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadLogo(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, logoUrl: data.logoUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Logo uploaded successfully");
+    },
+    onError: () => {
+      toast.error("Failed to upload logo");
+    },
+  });
+
+  const handleSave = () => {
+    if (!form.name || !form.address || !form.email || !form.phone) {
+      toast.error("Please fill in all required fields (Name, Address, Email, Phone)");
+      return;
+    }
+    updateMutation.mutate(form as GeneralSettings);
+  };
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadLogoMutation.mutate(e.target.files[0]);
+    }
   };
 
   return (
@@ -48,56 +90,147 @@ function SettingsPage() {
         <TabsContent value="general" className="grid md:grid-cols-2 gap-4">
           <Card className="p-6 rounded-2xl space-y-3">
             <div className="font-serif text-lg">Property</div>
-            <div><Label>Hotel / restaurant name</Label><Input defaultValue="The Aurelia Grand" className="rounded-xl mt-1" /></div>
-            <div><Label>Logo</Label><div className="mt-1 h-20 rounded-xl border-2 border-dashed flex items-center justify-center text-xs gap-2 text-muted-foreground"><Upload className="size-4" /> Upload</div></div>
-            <div><Label>Address</Label><Textarea defaultValue="Rua da Prata 132, Lisbon, Portugal" className="rounded-xl mt-1" /></div>
-            <div className="grid grid-cols-2 gap-3">
-              <div><Label>Phone</Label><Input defaultValue="+351 21 123 4567" className="rounded-xl mt-1" /></div>
-              <div><Label>Email</Label><Input defaultValue="stay@aurelia.co" className="rounded-xl mt-1" /></div>
-            </div>
+            {isLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-10 bg-muted rounded-xl"></div>
+                <div className="h-20 bg-muted rounded-xl"></div>
+                <div className="h-20 bg-muted rounded-xl"></div>
+                <div className="h-10 bg-muted rounded-xl"></div>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <Label>Hotel / restaurant name</Label>
+                  <Input 
+                    value={form.name || ""} 
+                    onChange={e => setForm(f => ({...f, name: e.target.value}))}
+                    className="rounded-xl mt-1" 
+                  />
+                </div>
+                <div>
+                  <Label>Logo</Label>
+                  <div 
+                    className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
+                    onClick={() => fileInputRef.current?.click()}
+                  >
+                    {form.logoUrl ? (
+                      <img src={`${BASE_URL}${form.logoUrl}`} alt="Logo" className="h-full object-contain" />
+                    ) : (
+                      <>
+                        <Upload className="size-4" /> 
+                        {uploadLogoMutation.isPending ? "Uploading..." : "Upload Logo"}
+                      </>
+                    )}
+                  </div>
+                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                </div>
+                <div>
+                  <Label>Address</Label>
+                  <Textarea 
+                    value={form.address || ""} 
+                    onChange={e => setForm(f => ({...f, address: e.target.value}))}
+                    className="rounded-xl mt-1" 
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Phone</Label>
+                    <Input 
+                      value={form.phone || ""} 
+                      onChange={e => setForm(f => ({...f, phone: e.target.value}))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input 
+                      value={form.email || ""} 
+                      onChange={e => setForm(f => ({...f, email: e.target.value}))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
+
           <Card className="p-6 rounded-2xl space-y-3">
             <div className="font-serif text-lg">Tax & currency</div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>Currency</Label>
-                <Input 
-                  value={taxConfig.currency} 
-                  onChange={(e) => setTaxConfig(prev => ({ ...prev, currency: e.target.value }))}
-                  className="rounded-xl mt-1" 
-                />
+            {isLoading ? (
+              <div className="animate-pulse space-y-4">
+                <div className="h-10 bg-muted rounded-xl"></div>
+                <div className="h-10 bg-muted rounded-xl"></div>
+                <div className="h-10 bg-muted rounded-xl"></div>
               </div>
-              <div>
-                <Label>Service charge %</Label>
-                <Input 
-                  type="number"
-                  value={taxConfig.serviceChargePercent} 
-                  onChange={(e) => setTaxConfig(prev => ({ ...prev, serviceChargePercent: parseFloat(e.target.value) || 0 }))}
-                  className="rounded-xl mt-1" 
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label>CGST %</Label>
-                <Input 
-                  type="number"
-                  value={taxConfig.cgstPercent} 
-                  onChange={(e) => setTaxConfig(prev => ({ ...prev, cgstPercent: parseFloat(e.target.value) || 0 }))}
-                  className="rounded-xl mt-1" 
-                />
-              </div>
-              <div>
-                <Label>SGST %</Label>
-                <Input 
-                  type="number"
-                  value={taxConfig.sgstPercent} 
-                  onChange={(e) => setTaxConfig(prev => ({ ...prev, sgstPercent: parseFloat(e.target.value) || 0 }))}
-                  className="rounded-xl mt-1" 
-                />
-              </div>
-            </div>
-            <Button className="rounded-xl bg-primary text-primary-foreground" onClick={handleSaveTax}>Save</Button>
+            ) : (
+              <>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>Currency</Label>
+                    <Input 
+                      value={form.currency || ""} 
+                      onChange={(e) => setForm(prev => ({ ...prev, currency: e.target.value }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                  <div>
+                    <Label>Service charge %</Label>
+                    <Input 
+                      type="number"
+                      value={form.serviceChargePercent ?? 10} 
+                      onChange={(e) => setForm(prev => ({ ...prev, serviceChargePercent: parseFloat(e.target.value) || 0 }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label>CGST %</Label>
+                    <Input 
+                      type="number"
+                      value={form.cgstPercent ?? 9} 
+                      onChange={(e) => setForm(prev => ({ ...prev, cgstPercent: parseFloat(e.target.value) || 0 }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                  <div>
+                    <Label>SGST %</Label>
+                    <Input 
+                      type="number"
+                      value={form.sgstPercent ?? 9} 
+                      onChange={(e) => setForm(prev => ({ ...prev, sgstPercent: parseFloat(e.target.value) || 0 }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-3 mt-4">
+                  <div>
+                    <Label>Estimated wait time (minutes)</Label>
+                    <Input 
+                      type="number"
+                      value={form.waitlistEstimatedWaitMinutes ?? 22} 
+                      onChange={(e) => setForm(prev => ({ ...prev, waitlistEstimatedWaitMinutes: parseInt(e.target.value) || 0 }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Waitlist descriptive message</Label>
+                    <Textarea 
+                      value={form.waitlistMessage ?? "Based on average turnover of 48m over the last hour and 3 free tables."} 
+                      onChange={(e) => setForm(prev => ({ ...prev, waitlistMessage: e.target.value }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                </div>
+                <Button 
+                  disabled={updateMutation.isPending}
+                  className="rounded-xl bg-primary text-primary-foreground mt-4" 
+                  onClick={handleSave}
+                >
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
+              </>
+            )}
           </Card>
         </TabsContent>
 

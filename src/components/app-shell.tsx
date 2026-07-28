@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { useQuery } from "@tanstack/react-query";
+import { settingsService } from "@/api/services/settingsService";
+import { BASE_URL } from "@/api/apiClient";
 
 const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -36,6 +39,12 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
 
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+    staleTime: 1000 * 60 * 5,
+  });
+
   return (
     <div className="min-h-screen w-full bg-background text-foreground flex">
       {/* Sidebar - desktop */}
@@ -45,14 +54,18 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
           collapsed ? "w-[76px]" : "w-[260px]",
         )}
       >
-        <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border">
-          <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-[0_0_20px_-4px_var(--sidebar-primary)]">
-            <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">A</span>
+        <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border overflow-hidden shrink-0">
+          <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-[0_0_20px_-4px_var(--sidebar-primary)] shrink-0">
+            {settings?.logoUrl ? (
+                <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+            ) : (
+                <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
+            )}
           </div>
           {!collapsed && (
             <div className="flex-1 min-w-0">
-              <div className="font-serif text-lg leading-tight">Aurelia</div>
-              <div className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/60">Hospitality OS</div>
+              <div className="font-serif text-lg leading-tight truncate">{settings?.name || "Aurelia"}</div>
+              <div className="text-[10px] uppercase tracking-[0.18em] text-sidebar-foreground/60 truncate">Hospitality OS</div>
             </div>
           )}
           <button
@@ -90,10 +103,10 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
         </nav>
 
         <div className={cn("border-t border-sidebar-border p-3", collapsed && "px-2")}>
-          <div className={cn("rounded-xl p-3 bg-sidebar-accent/60", collapsed && "hidden")}>
+          <div className={cn("rounded-xl p-3 bg-sidebar-accent/60 overflow-hidden", collapsed && "hidden")}>
             <div className="text-[11px] uppercase tracking-widest text-sidebar-foreground/50">Property</div>
-            <div className="font-serif mt-0.5">The Aurelia Grand</div>
-            <div className="text-xs text-sidebar-foreground/60 mt-1">Lisbon · Portugal</div>
+            <div className="font-serif mt-0.5 truncate">{settings?.name || "The Aurelia Grand"}</div>
+            <div className="text-xs text-sidebar-foreground/60 mt-1 truncate">{settings?.address || "Lisbon · Portugal"}</div>
           </div>
         </div>
       </aside>
@@ -104,11 +117,15 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 h-full w-72 bg-sidebar text-sidebar-foreground p-4 animate-in slide-in-from-left duration-300">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center">
-                  <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">A</span>
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
+                  {settings?.logoUrl ? (
+                      <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+                  ) : (
+                      <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
+                  )}
                 </div>
-                <div className="font-serif text-lg">Aurelia</div>
+                <div className="font-serif text-lg truncate">{settings?.name || "Aurelia"}</div>
               </div>
               <button onClick={() => setMobileOpen(false)}><X className="size-5" /></button>
             </div>

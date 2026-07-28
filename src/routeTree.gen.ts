@@ -23,6 +23,7 @@ import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as OrderTokenRouteImport } from './routes/order.$token'
+import { Route as PrintBillIdRouteImport } from './routes/print.$billId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -94,6 +95,11 @@ const OrderTokenRoute = OrderTokenRouteImport.update({
   path: '/order/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrintBillIdRoute = PrintBillIdRouteImport.update({
+  id: '/print/$billId',
+  path: '/print/$billId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/tables': typeof TablesRoute
   '/waitlist': typeof WaitlistRoute
   '/order/$token': typeof OrderTokenRoute
+  '/print/$billId': typeof PrintBillIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -126,6 +133,7 @@ export interface FileRoutesByTo {
   '/tables': typeof TablesRoute
   '/waitlist': typeof WaitlistRoute
   '/order/$token': typeof OrderTokenRoute
+  '/print/$billId': typeof PrintBillIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/tables': typeof TablesRoute
   '/waitlist': typeof WaitlistRoute
   '/order/$token': typeof OrderTokenRoute
+  '/print/$billId': typeof PrintBillIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -161,6 +170,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/waitlist'
     | '/order/$token'
+    | '/print/$billId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/waitlist'
     | '/order/$token'
+    | '/print/$billId'
   id:
     | '__root__'
     | '/'
@@ -193,6 +204,7 @@ export interface FileRouteTypes {
     | '/tables'
     | '/waitlist'
     | '/order/$token'
+    | '/print/$billId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -210,6 +222,7 @@ export interface RootRouteChildren {
   TablesRoute: typeof TablesRoute
   WaitlistRoute: typeof WaitlistRoute
   OrderTokenRoute: typeof OrderTokenRoute
+  PrintBillIdRoute: typeof PrintBillIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -312,6 +325,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/print/$billId': {
+      id: '/print/$billId'
+      path: '/print/$billId'
+      fullPath: '/print/$billId'
+      preLoaderRoute: typeof PrintBillIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   TablesRoute: TablesRoute,
   WaitlistRoute: WaitlistRoute,
   OrderTokenRoute: OrderTokenRoute,
+  PrintBillIdRoute: PrintBillIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

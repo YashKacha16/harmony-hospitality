@@ -9,6 +9,7 @@ import { Printer, Send, Search, FileDown } from "lucide-react";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { billingService } from "@/api/services/billingService";
+import { settingsService } from "@/api/services/settingsService";
 
 export const Route = createFileRoute("/billing")({
   head: () => ({ meta: [{ title: "Billing — Aurelia" }, { name: "description", content: "Room and restaurant invoices with tax breakdown, split bills and payment tracking." }] }),
@@ -22,6 +23,13 @@ function BillingPage() {
     queryFn: () => billingService.getBills()
   });
 
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsService.getGeneralSettings(),
+    staleTime: 1000 * 60 * 5,
+  });
+  const currencySymbol = settings?.currency?.match(/\((.*?)\)/)?.[1] || settings?.currency || "$";
+
   const payBillMutation = useMutation({
     mutationFn: ({ id, method }: { id: number, method: string }) => billingService.payBill(id, method),
     onSuccess: () => {
@@ -31,7 +39,7 @@ function BillingPage() {
   });
 
   const updateBillMutation = useMutation({
-    mutationFn: ({ id, data }: { id: number; data: { serviceChargePercent?: number; taxPercent?: number; discount?: number } }) =>
+    mutationFn: ({ id, data }: { id: number; data: { serviceChargePercent?: number; taxPercent?: number; cgstPercent?: number; sgstPercent?: number; discount?: number } }) =>
       billingService.updateBill(id, data),
     onSuccess: () => {
       toast.success("Bill updated successfully");
@@ -45,10 +53,12 @@ function BillingPage() {
   return (
     <AppShell title="Billing" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Billing" }]}>
       <Tabs defaultValue="room">
-        <TabsList className="rounded-xl mb-4">
-          <TabsTrigger value="room" className="rounded-lg">Room bills</TabsTrigger>
-          <TabsTrigger value="rest" className="rounded-lg">Restaurant bills</TabsTrigger>
-        </TabsList>
+        <div className="flex justify-between items-center mb-4">
+          <TabsList className="rounded-xl">
+            <TabsTrigger value="room" className="rounded-lg">Room bills</TabsTrigger>
+            <TabsTrigger value="rest" className="rounded-lg">Restaurant bills</TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="room" className="grid lg:grid-cols-[1fr_360px] gap-4">
           <Card className="p-6 rounded-2xl">
@@ -75,7 +85,7 @@ function BillingPage() {
                     <tr key={i} className="border-t border-border">
                       <td className="py-2">{d}</td>
                       <td className="py-2 text-right">{q as number}</td>
-                      <td className="py-2 text-right">${a as number}</td>
+                      <td className="py-2 text-right">{currencySymbol}{a as number}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -83,12 +93,15 @@ function BillingPage() {
             </div>
             <div className="mt-4 flex justify-end">
               <div className="w-64 text-sm space-y-1">
-                <Row l="Subtotal" v="$1,495" />
-                <Row l="Service charge (10%)" v="$149" />
-                <Row l="CGST 9%" v="$134" />
-                <Row l="SGST 9%" v="$134" />
-                <Row l="Discount" v="-$50" tone="text-success" />
-                <div className="border-t border-border pt-2 mt-2 flex justify-between font-serif text-lg"><span>Total due</span><span className="text-primary">$1,862</span></div>
+                <Row l="Subtotal" v={`${currencySymbol}1,495.00`} />
+                <Row l={`Service charge (${settings?.serviceChargePercent || 0}%)`} v={`${currencySymbol}${(1495 * (settings?.serviceChargePercent || 0) / 100).toFixed(2)}`} />
+                <Row l={`CGST (${settings?.cgstPercent || 0}%)`} v={`${currencySymbol}${(1495 * (settings?.cgstPercent || 0) / 100).toFixed(2)}`} />
+                <Row l={`SGST (${settings?.sgstPercent || 0}%)`} v={`${currencySymbol}${(1495 * (settings?.sgstPercent || 0) / 100).toFixed(2)}`} />
+                <Row l="Discount" v={`-${currencySymbol}50.00`} tone="text-success" />
+                <div className="border-t border-border pt-2 mt-2 flex justify-between font-serif text-lg">
+                  <span>Total due</span>
+                  <span className="text-primary">{currencySymbol}{(1495 + (1495 * (settings?.serviceChargePercent || 0) / 100) + (1495 * (settings?.cgstPercent || 0) / 100) + (1495 * (settings?.sgstPercent || 0) / 100) - 50).toFixed(2)}</span>
+                </div>
               </div>
             </div>
             <div className="mt-6 flex justify-between items-center gap-3 flex-wrap">
@@ -135,24 +148,31 @@ function BillingPage() {
                     {bill.order?.items.map((item, idx) => (
                       <li key={idx} className="flex justify-between">
                         <span>{item.quantity}× {item.name} {item.status === 'Cancelled' ? '(Cancelled)' : ''}</span>
-                        <span className={item.status === 'Cancelled' ? 'line-through text-muted-foreground' : ''}>${(item.priceAtOrder * item.quantity).toFixed(2)}</span>
+                        <span className={item.status === 'Cancelled' ? 'line-through text-muted-foreground' : ''}>{currencySymbol}{(item.priceAtOrder * item.quantity).toFixed(2)}</span>
                       </li>
                     ))}
                   </ul>
                   
                   <div className="mt-4 pt-3 border-t border-border w-72 ml-auto text-sm space-y-1">
-                    <Row l="Subtotal" v={`$${bill.subtotal.toFixed(2)}`} />
-                    <Row l={`Service charge (${bill.serviceChargePercent ?? 10}%)`} v={`$${bill.serviceCharge.toFixed(2)}`} />
-                    <Row l={`Tax (${bill.taxPercent ?? 18}%)`} v={`$${bill.taxAmount.toFixed(2)}`} />
-                    {bill.discount > 0 && <Row l="Discount" v={`-$${bill.discount.toFixed(2)}`} tone="text-success" />}
+                    <Row l="Subtotal" v={`${currencySymbol}${bill.subtotal.toFixed(2)}`} />
+                    <Row l={`Service charge (${bill.serviceChargePercent ?? 10}%)`} v={`${currencySymbol}${bill.serviceCharge.toFixed(2)}`} />
+                    {bill.cgstPercent != null && bill.sgstPercent != null ? (
+                      <>
+                        <Row l={`CGST (${bill.cgstPercent}%)`} v={`${currencySymbol}${((bill.taxAmount * bill.cgstPercent) / (bill.taxPercent || 18)).toFixed(2)}`} />
+                        <Row l={`SGST (${bill.sgstPercent}%)`} v={`${currencySymbol}${((bill.taxAmount * bill.sgstPercent) / (bill.taxPercent || 18)).toFixed(2)}`} />
+                      </>
+                    ) : (
+                      <Row l={`Tax (${bill.taxPercent ?? 18}%)`} v={`${currencySymbol}${bill.taxAmount.toFixed(2)}`} />
+                    )}
+                    {bill.discount > 0 && <Row l="Discount" v={`-${currencySymbol}${bill.discount.toFixed(2)}`} tone="text-success" />}
                     <div className="border-t border-border pt-2 mt-2 flex justify-between font-serif text-lg">
                       <span>Total due</span>
-                      <span className="text-primary">${bill.totalAmount.toFixed(2)}</span>
+                      <span className="text-primary">{currencySymbol}{bill.totalAmount.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
 
-                {bill.status !== "Paid" && (
+                {bill.status !== "Paid" ? (
                   <div className="mt-6 pt-4 border-t border-border flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 flex-wrap text-xs">
                       <div className="flex items-center gap-1.5">
@@ -176,51 +196,12 @@ function BillingPage() {
                           }}
                         />
                       </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground font-medium">Service %:</span>
-                        <Input
-                          type="number"
-                          placeholder="10"
-                          className="w-16 h-8 rounded-lg text-xs"
-                          defaultValue={bill.serviceChargePercent ?? 10}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              const val = parseFloat((e.target as HTMLInputElement).value) || 0;
-                              updateBillMutation.mutate({ id: bill.id, data: { serviceChargePercent: val } });
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            if (val !== (bill.serviceChargePercent ?? 10)) {
-                              updateBillMutation.mutate({ id: bill.id, data: { serviceChargePercent: val } });
-                            }
-                          }}
-                        />
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-muted-foreground font-medium">Tax %:</span>
-                        <Input
-                          type="number"
-                          placeholder="18"
-                          className="w-16 h-8 rounded-lg text-xs"
-                          defaultValue={bill.taxPercent ?? 18}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter') {
-                              const val = parseFloat((e.target as HTMLInputElement).value) || 0;
-                              updateBillMutation.mutate({ id: bill.id, data: { taxPercent: val } });
-                            }
-                          }}
-                          onBlur={(e) => {
-                            const val = parseFloat(e.target.value) || 0;
-                            if (val !== (bill.taxPercent ?? 18)) {
-                              updateBillMutation.mutate({ id: bill.id, data: { taxPercent: val } });
-                            }
-                          }}
-                        />
-                      </div>
                     </div>
 
                     <div className="flex justify-end items-center gap-3">
+                      <Button variant="outline" className="rounded-lg" onClick={() => window.open(`/print/${bill.id}`, '_blank')}>
+                        <Printer className="size-4 mr-1" /> Print
+                      </Button>
                       <Select defaultValue="Card" onValueChange={(val) => {
                         (window as any)[`payMethod_${bill.id}`] = val;
                       }}>
@@ -242,6 +223,12 @@ function BillingPage() {
                         {payBillMutation.isPending ? "Processing..." : "Mark as Paid"}
                       </Button>
                     </div>
+                  </div>
+                ) : (
+                  <div className="mt-6 pt-4 border-t border-border flex justify-end">
+                    <Button variant="outline" className="rounded-lg" onClick={() => window.open(`/print/${bill.id}`, '_blank')}>
+                      <Printer className="size-4 mr-1" /> Print
+                    </Button>
                   </div>
                 )}
               </Card>

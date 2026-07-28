@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import * as signalR from "@microsoft/signalr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -11,6 +12,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { orderService } from "@/api/services/orderService";
 import { menuService } from "@/api/services/menuService";
 import { tableService } from "@/api/services/tableService";
+import { settingsService } from "@/api/services/settingsService";
 import { BASE_URL } from "@/api/apiClient";
 import { CreateOrderDto } from "@/types/models";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -27,6 +29,8 @@ function CustomerOrderingPage() {
   const [specialInstructions, setSpecialInstructions] = useState("");
   const [isOrdered, setIsOrdered] = useState(false);
   const [placedOrderNumber, setPlacedOrderNumber] = useState("");
+  const [placedOrderId, setPlacedOrderId] = useState<number | null>(null);
+  const [orderStatus, setOrderStatus] = useState<string>("New");
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   // Queries
@@ -36,10 +40,30 @@ function CustomerOrderingPage() {
     retry: false
   });
 
+  // Resume active order if it already exists
+  useEffect(() => {
+    if (table?.activeOrderId) {
+      setPlacedOrderId(table.activeOrderId);
+      setPlacedOrderNumber(table.activeOrderNumber || "");
+      setOrderStatus(table.activeOrderStatus || "New");
+      setIsOrdered(true);
+    }
+  }, [table]);
+
   const { data: menuGrouped = [], isLoading: isMenuLoading } = useQuery({
     queryKey: ["menuGroupedCustomer"],
     queryFn: menuService.getGrouped
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const currencyStr = settings?.currency || "$";
+  const currencySymbolMatch = currencyStr.match(/\(([^)]+)\)/);
+  const displayCurrency = currencySymbolMatch ? currencySymbolMatch[1] : currencyStr;
 
   useEffect(() => {
     if (menuGrouped.length > 0 && activeMenuCat === null) {
@@ -50,8 +74,10 @@ function CustomerOrderingPage() {
   // Place Order Mutation
   const placeOrderMutation = useMutation({
     mutationFn: (order: CreateOrderDto) => orderService.create(order),
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       setPlacedOrderNumber(data.orderNumber);
+      setPlacedOrderId(data.id);
+      setOrderStatus(data.status || "New");
       setIsOrdered(true);
       setCart([]);
       setIsCartOpen(false);
@@ -61,6 +87,39 @@ function CustomerOrderingPage() {
       toast.error(err.message || "Failed to submit order. Please ask a server.");
     }
   });
+
+  // SignalR for live status updates
+  useEffect(() => {
+    if (!placedOrderId) return;
+
+    const conn = new signalR.HubConnectionBuilder()
+      .withUrl(`${BASE_URL}/kitchenHub`)
+      .withAutomaticReconnect()
+      .build();
+
+    conn.start().catch(err => console.error("SignalR Customer Order Error: ", err));
+
+    conn.on("OrderStatusChanged", (id: number, status: string) => {
+      if (id === placedOrderId) {
+        setOrderStatus(status);
+        if (status === "Ready") {
+          toast.success("Your food is ready!");
+        } else if (status === "Served") {
+          toast.success("Your food has been served. Enjoy!");
+        }
+      }
+    });
+
+    conn.on("OrderUpdated", (order: any) => {
+       if (order.id === placedOrderId) {
+          setOrderStatus(order.status);
+       }
+    });
+
+    return () => {
+      conn.stop();
+    };
+  }, [placedOrderId]);
 
   if (isTableLoading) {
     return (
@@ -72,14 +131,22 @@ function CustomerOrderingPage() {
   }
 
   if (isTableError || !table) {
+    const err = tableError as any;
+    const isConflict = err?.status === 409 || err?.message?.includes("bill") || err?.message?.includes("unavailable");
+    const errorMessage = err?.message || "We couldn't resolve this table's QR code. Please scan the QR code located on your table again.";
+    
     return (
       <div className="min-h-screen bg-[#070e17] text-foreground flex flex-col items-center justify-center p-6 text-center gap-4">
         <div className="size-16 rounded-full bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive">
           <AlertTriangle className="size-8" />
         </div>
         <div className="space-y-1">
-          <h1 className="font-serif text-2xl font-bold text-foreground">Invalid Table Code</h1>
-          <p className="text-sm text-muted-foreground max-w-sm">We couldn't resolve this table's QR code. Please scan the QR code located on your table again.</p>
+          <h1 className="font-serif text-2xl font-bold text-foreground">
+            {isConflict ? "Table Unavailable" : "Invalid Table Code"}
+          </h1>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            {errorMessage}
+          </p>
         </div>
       </div>
     );
@@ -138,10 +205,21 @@ function CustomerOrderingPage() {
         </div>
         <Card className="p-4 bg-sidebar/20 border-border/50 w-full">
           <div className="flex items-center justify-center gap-2 text-xs font-bold uppercase text-primary tracking-wider">
-            <Clock className="size-4 animate-spin text-orange-500" />
-            Kitchen is preparing your food
+            {orderStatus === "New" && <Clock className="size-4 animate-spin text-orange-500" />}
+            {orderStatus === "Preparing" && <ChefHat className="size-4 text-orange-500 animate-pulse" />}
+            {(orderStatus === "Ready" || orderStatus === "Served") && <CheckCircle className="size-4 text-success" />}
+            
+            {orderStatus === "New" && "Order Received"}
+            {orderStatus === "Preparing" && "Kitchen is preparing your food"}
+            {orderStatus === "Ready" && "Your food is ready!"}
+            {orderStatus === "Served" && "Your food has been served"}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">Please sit back and relax. Your meal will be served shortly at Table {getTableNames()}.</p>
+          <p className="text-xs text-muted-foreground mt-2">
+            {orderStatus === "New" && "Your order is in the queue."}
+            {orderStatus === "Preparing" && "Please sit back and relax. Your meal will be served shortly."}
+            {orderStatus === "Ready" && `A server will bring your food to Table ${getTableNames()} momentarily.`}
+            {orderStatus === "Served" && "Enjoy your meal! You can order more items anytime."}
+          </p>
         </Card>
         <Button className="rounded-xl w-full py-3 bg-primary text-primary-foreground font-bold" onClick={() => setIsOrdered(false)}>
           Order More Items
@@ -155,7 +233,16 @@ function CustomerOrderingPage() {
       {/* Brand Header */}
       <header className="p-5 border-b border-border/30 sticky top-0 bg-[#070e17]/95 backdrop-blur-md z-40 flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl font-bold text-foreground">Aurelia</h1>
+          <div className="flex items-center gap-2 mb-1">
+            {settings?.logoUrl && (
+              <img 
+                src={settings.logoUrl.startsWith("http") ? settings.logoUrl : `${BASE_URL}${settings.logoUrl}`} 
+                alt="Logo" 
+                className="h-6 object-contain" 
+              />
+            )}
+            <h1 className="font-serif text-2xl font-bold text-foreground">{settings?.name || "Aurelia"}</h1>
+          </div>
           <p className="text-xs text-muted-foreground font-semibold flex items-center gap-1">
             <ShieldCheck className="size-3.5 text-success fill-success/10" />
             Ordering from Table {getTableNames()}
@@ -191,20 +278,29 @@ function CustomerOrderingPage() {
                 {cat.items.map(item => (
                   <Card key={item.id} className="p-3 rounded-2xl border-border/40 bg-sidebar/20 flex gap-3.5 items-center justify-between">
                     <div className="flex gap-3 items-center min-w-0 flex-1">
-                      <div className="size-16 rounded-xl overflow-hidden relative flex-shrink-0">
-                        <img 
-                          src={item.image ? (item.image.startsWith("http") ? item.image : `${BASE_URL}${item.image}`) : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=150&q=85"} 
-                          alt={item.name} 
-                          className="w-full h-full object-cover"
-                        />
-                        <span className={cn("absolute top-1 left-1 size-3 rounded-full border bg-background/90 flex items-center justify-center border-border", item.veg ? "border-success" : "border-destructive")}>
-                          <span className={cn("block size-1.5 rounded-full", item.veg ? "bg-success" : "bg-destructive")} />
-                        </span>
-                      </div>
+                      {item.image ? (
+                        <div className="size-16 rounded-xl overflow-hidden relative flex-shrink-0">
+                          <img 
+                            src={item.image.startsWith("http") ? item.image : `${BASE_URL}${item.image}`} 
+                            alt={item.name} 
+                            className="w-full h-full object-cover"
+                          />
+                          <span className={cn("absolute top-1 left-1 size-3 rounded-full border bg-background/90 flex items-center justify-center border-border", item.veg ? "border-success" : "border-destructive")}>
+                            <span className={cn("block size-1.5 rounded-full", item.veg ? "bg-success" : "bg-destructive")} />
+                          </span>
+                        </div>
+                      ) : null}
                       <div className="min-w-0">
-                        <h3 className="text-xs.5 font-bold truncate text-foreground">{item.name}</h3>
+                        <h3 className="text-[13px] font-bold truncate text-foreground flex items-center gap-1.5">
+                          {!item.image && (
+                            <span className={cn("size-3 rounded-full border flex-shrink-0 flex items-center justify-center bg-transparent", item.veg ? "border-success" : "border-destructive")}>
+                              <span className={cn("block size-1.5 rounded-full", item.veg ? "bg-success" : "bg-destructive")} />
+                            </span>
+                          )}
+                          <span>{item.name}</span>
+                        </h3>
                         <p className="text-[10px] text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>
-                        <span className="text-xs font-extrabold text-foreground block mt-1.5">${item.price}</span>
+                        <span className="text-xs font-extrabold text-foreground block mt-1.5">{displayCurrency}{item.price}</span>
                       </div>
                     </div>
                     <Button 
@@ -233,7 +329,7 @@ function CustomerOrderingPage() {
                   <ShoppingBag className="size-4.5" />
                   View Cart ({totalItemsCount})
                 </span>
-                <span className="text-sm font-extrabold">${subtotal}</span>
+                <span className="text-sm font-extrabold">{displayCurrency}{subtotal}</span>
               </Button>
             </SheetTrigger>
             <SheetContent side="bottom" className="max-w-md mx-auto rounded-t-3xl p-6 bg-background border-t border-border">
@@ -249,7 +345,7 @@ function CustomerOrderingPage() {
                   <div key={idx} className="flex items-center justify-between text-sm pb-2 border-b border-muted last:border-0 last:pb-0">
                     <div className="flex-1 min-w-0 pr-2">
                       <span className="font-semibold text-foreground truncate block">{item.name}</span>
-                      <span className="text-xs text-muted-foreground font-semibold">${item.price} each</span>
+                      <span className="text-xs text-muted-foreground font-semibold">{displayCurrency}{item.price} each</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button 
@@ -286,7 +382,7 @@ function CustomerOrderingPage() {
 
                 <div className="flex justify-between text-base font-bold text-foreground">
                   <span>Subtotal</span>
-                  <span>${subtotal}</span>
+                  <span>{displayCurrency}{subtotal}</span>
                 </div>
 
                 <Button 

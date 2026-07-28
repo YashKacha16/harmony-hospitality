@@ -246,8 +246,8 @@ function TablesPage() {
     selectedTables.every(t => !t.isMerged && t.status !== "Occupied") &&
     selectedTables.every(t => t.categoryId === selectedTables[0].categoryId);
 
-  // Find dynamic tab zones from grouped data
-  const zones = ["All", ...groupedTables.map(g => g.categoryName).filter(name => name !== "Unassigned")];
+  // Find dynamic tab zones from table categories
+  const zones = ["All", ...tableCategories.map(c => c.name)];
 
   return (
     <AppShell title="Restaurant floor" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Tables" }]}>
@@ -615,14 +615,14 @@ function TablesPage() {
                         className="rounded-xl" 
                         onClick={() => {
                           if (activeOrder) {
-                            navigate({ to: "/orders", search: { editOrderId: activeOrder.id } });
+                            navigate({ to: "/orders", search: { editOrderId: activeOrder.id, tableId: undefined, mergeGroupId: undefined } });
                           } else {
                             bulkStatusMutation.mutate({ ids: [t.id], status: "Occupied" });
                             toast.success("Order started");
                             if (t.isMerged && t.mergeGroupId) {
-                              navigate({ to: "/orders", search: { mergeGroupId: t.mergeGroupId, tableId: undefined } });
+                              navigate({ to: "/orders", search: { mergeGroupId: t.mergeGroupId, tableId: undefined, editOrderId: undefined } });
                             } else {
-                              navigate({ to: "/orders", search: { tableId: t.id, mergeGroupId: undefined } });
+                              navigate({ to: "/orders", search: { tableId: t.id, mergeGroupId: undefined, editOrderId: undefined } });
                             }
                           }
                         }}

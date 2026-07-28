@@ -17,6 +17,8 @@ export interface RestaurantBillDto {
   subtotal: number;
   taxAmount: number;
   taxPercent?: number;
+  cgstPercent?: number;
+  sgstPercent?: number;
   serviceCharge: number;
   serviceChargePercent?: number;
   discount: number;
@@ -40,13 +42,13 @@ export const billingService = {
     return response;
   },
   
-  generateBill: async (data: { orderId: number; serviceChargePercent?: number; taxPercent?: number; discount?: number } | number): Promise<RestaurantBillDto> => {
+  generateBill: async (data: { orderId: number; serviceChargePercent?: number; taxPercent?: number; cgstPercent?: number; sgstPercent?: number; discount?: number } | number): Promise<RestaurantBillDto> => {
     const payload = typeof data === "number" ? { orderId: data } : data;
     const response = await apiClient.post<RestaurantBillDto>("/api/billing/generate", payload);
     return response;
   },
 
-  updateBill: async (id: number, data: { serviceChargePercent?: number; taxPercent?: number; discount?: number }): Promise<RestaurantBillDto> => {
+  updateBill: async (id: number, data: { serviceChargePercent?: number; taxPercent?: number; cgstPercent?: number; sgstPercent?: number; discount?: number }): Promise<RestaurantBillDto> => {
     const response = await apiClient.put<RestaurantBillDto>(`/api/billing/${id}`, data);
     return response;
   },

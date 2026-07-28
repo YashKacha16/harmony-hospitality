@@ -15,6 +15,7 @@ import { billingService } from "@/api/services/billingService";
 import { orderService } from "@/api/services/orderService";
 import { menuService } from "@/api/services/menuService";
 import { tableService } from "@/api/services/tableService";
+import { settingsService } from "@/api/services/settingsService";
 import { OrderDto, CreateOrderDto, CreateOrderItemDto, UpdateOrderItemDto, OrderItemDto } from "@/types/models";
 import { BASE_URL } from "@/api/apiClient";
 import { getTaxSettings } from "@/lib/taxSettings";
@@ -82,6 +83,13 @@ function OrdersPage() {
     queryKey: ["menuGrouped"],
     queryFn: menuService.getGrouped
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+    staleTime: 1000 * 60 * 5,
+  });
+  const currencySymbol = settings?.currency?.match(/\((.*?)\)/)?.[1] || settings?.currency || "$";
 
   const { data: tables = [] } = useQuery({
     queryKey: ["allTables"],
@@ -308,11 +316,13 @@ function OrdersPage() {
 
   const generateBillMutation = useMutation({
     mutationFn: (id: number) => {
-      const tax = getTaxSettings();
+      // Use the actual settings from the backend, with fallback to 0 if missing
       return billingService.generateBill({
         orderId: id,
-        serviceChargePercent: tax.serviceChargePercent,
-        taxPercent: tax.taxPercent
+        serviceChargePercent: settings?.serviceChargePercent || 0,
+        taxPercent: (settings?.cgstPercent || 0) + (settings?.sgstPercent || 0),
+        cgstPercent: settings?.cgstPercent || 0,
+        sgstPercent: settings?.sgstPercent || 0
       });
     },
     onSuccess: () => {
@@ -489,23 +499,32 @@ function OrdersPage() {
                   <TabsContent key={cat.categoryId} value={cat.categoryId.toString()} className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 mt-2">
                     {cat.items.map(item => (
                       <Card key={item.id} className="p-0 rounded-2xl overflow-hidden border border-border/40 bg-background/50 hover:border-primary/50 transition-colors flex flex-col">
-                        <div className="h-28 overflow-hidden relative">
-                          <img
-                            src={item.image ? (item.image.startsWith("http") ? item.image : `${BASE_URL}${item.image}`) : "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=400&q=80"}
-                            alt={item.name}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                          />
-                          <span className={cn("absolute top-2 left-2 size-4.5 rounded-full border bg-background/90 flex items-center justify-center border-border", item.veg ? "border-success" : "border-destructive")}>
-                            <span className={cn("block size-2 rounded-full", item.veg ? "bg-success" : "bg-destructive")} />
-                          </span>
-                        </div>
+                        {item.image && (
+                          <div className="h-28 overflow-hidden relative">
+                            <img
+                              src={item.image.startsWith("http") ? item.image : `${BASE_URL}${item.image}`}
+                              alt={item.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+                            <span className={cn("absolute top-2 left-2 size-4.5 rounded-full border bg-background/90 flex items-center justify-center border-border", item.veg ? "border-success" : "border-destructive")}>
+                              <span className={cn("block size-2 rounded-full", item.veg ? "bg-success" : "bg-destructive")} />
+                            </span>
+                          </div>
+                        )}
                         <div className="p-4 flex-1 flex flex-col justify-between">
                           <div>
-                            <div className="text-sm font-semibold leading-snug line-clamp-1 text-foreground">{item.name}</div>
-                            <div className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</div>
+                            <div className="flex items-center gap-2">
+                              {!item.image && (
+                                <span className={cn("size-4.5 shrink-0 rounded-full border flex items-center justify-center border-border", item.veg ? "border-success" : "border-destructive")}>
+                                  <span className={cn("block size-2 rounded-full", item.veg ? "bg-success" : "bg-destructive")} />
+                                </span>
+                              )}
+                              <div className="text-sm font-semibold leading-snug line-clamp-1 text-foreground">{item.name}</div>
+                            </div>
+                            <div className="text-xs text-muted-foreground line-clamp-1 mt-1">{item.description}</div>
                           </div>
                           <div className="flex items-center justify-between mt-3 pt-2 border-t border-muted/50">
-                            <span className="text-sm font-bold text-foreground">${item.price}</span>
+                            <span className="text-sm font-bold text-foreground">{currencySymbol}{item.price}</span>
                             <Button
                               size="sm"
                               variant="ghost"
@@ -625,7 +644,7 @@ function OrdersPage() {
                           {item.isAddOn && <span className="ml-1 text-[9px] px-1 py-0.2 rounded-md bg-orange-600/15 text-orange-600 font-extrabold uppercase">Add-on</span>}
                           {item.status === "Cancelled" && <span className="ml-1 text-[9px] px-1 py-0.2 rounded-md bg-destructive/15 text-destructive font-extrabold uppercase">Cancelled</span>}
                         </div>
-                        <div className="text-xs text-muted-foreground font-medium">${item.priceAtOrder} each</div>
+                        <div className="text-xs text-muted-foreground font-medium">{currencySymbol}{item.priceAtOrder} each</div>
                       </div>
                       {item.status === "Active" && activeOrder.status === "New" && (
                         <button
@@ -658,7 +677,7 @@ function OrdersPage() {
                   <div key={idx} className="flex items-center justify-between text-sm pb-2 border-b border-muted/50 last:border-0 last:pb-0">
                     <div className="flex-1 min-w-0 pr-2">
                       <div className="font-semibold text-foreground truncate">{item.name}</div>
-                      <div className="text-xs text-muted-foreground font-medium">${item.price} each</div>
+                      <div className="text-xs text-muted-foreground font-medium">{currencySymbol}{item.price} each</div>
                     </div>
                     <div className="flex items-center gap-2.5">
                       <button
@@ -709,17 +728,17 @@ function OrdersPage() {
                   <>
                     <div className="flex justify-between">
                       <span>Placed Items</span>
-                      <span>${editingOrderItems.filter(i => i.status !== "Cancelled").reduce((s, i) => s + i.quantity * i.priceAtOrder, 0)}</span>
+                      <span>{currencySymbol}{editingOrderItems.filter(i => i.status !== "Cancelled").reduce((s, i) => s + i.quantity * i.priceAtOrder, 0)}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>New Additions</span>
-                      <span>${cart.reduce((s, i) => s + i.qty * i.price, 0)}</span>
+                      <span>{currencySymbol}{cart.reduce((s, i) => s + i.qty * i.price, 0)}</span>
                     </div>
                   </>
                 )}
                 <div className="flex justify-between text-base font-bold text-foreground pt-1.5 border-t border-dashed border-muted">
                   <span>{activeOrder ? "New Total" : "Subtotal"}</span>
-                  <span>${(activeOrder
+                  <span>{currencySymbol}{(activeOrder
                     ? editingOrderItems.filter(i => i.status !== "Cancelled").reduce((s, i) => s + i.quantity * i.priceAtOrder, 0) + cart.reduce((s, i) => s + i.qty * i.price, 0)
                     : cart.reduce((s, i) => s + i.qty * i.price, 0)
                   )}</span>
@@ -781,6 +800,7 @@ function OrdersPage() {
                     onAcknowledge={() => acknowledgeAddOnsMutation.mutate(o.id)}
                     onGenerateBill={() => generateBillMutation.mutate(o.id)}
                     isPending={updateStatusMutation.isPending || cancelOrderMutation.isPending}
+                    currencySymbol={currencySymbol}
                   />
                 ))}
                 {items.length === 0 && (
@@ -867,7 +887,7 @@ function OrdersPage() {
                   <div className="border border-primary/20 rounded-xl p-3 bg-primary/5 space-y-2">
                     {editCartAdditions.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs">
-                        <span className="font-medium text-foreground">{item.qty}× {item.name} (${item.price} each)</span>
+                        <span className="font-medium text-foreground">{item.qty}× {item.name} ({currencySymbol}{item.price} each)</span>
                         <div className="flex items-center gap-1.5">
                           <button
                             className="size-5 rounded bg-muted flex items-center justify-center text-foreground"
@@ -927,7 +947,8 @@ function OrderCard({
   onStatusChange,
   onAcknowledge,
   onGenerateBill,
-  isPending
+  isPending,
+  currencySymbol
 }: {
   o: OrderDto;
   kds: boolean;
@@ -937,6 +958,7 @@ function OrderCard({
   onAcknowledge: () => void;
   onGenerateBill?: () => void;
   isPending: boolean;
+  currencySymbol: string;
 }) {
   const getElapsedMinutes = (createdAtStr: string) => {
     const dateStr = createdAtStr.endsWith('Z') ? createdAtStr : `${createdAtStr}Z`;
@@ -1036,7 +1058,7 @@ function OrderCard({
                   </span>
                 )}
               </span>
-              <span className="text-muted-foreground font-semibold">${item.priceAtOrder}</span>
+              <span className="text-muted-foreground font-semibold">{currencySymbol}{item.priceAtOrder}</span>
             </div>
           ))}
         </div>

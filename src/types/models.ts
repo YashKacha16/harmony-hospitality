@@ -45,6 +45,9 @@ export interface RestaurantTableDto {
     mergeGroupId?: number | null;
     combinedCapacity?: number | null;
     qrToken: string;
+    activeOrderId?: number | null;
+    activeOrderNumber?: string | null;
+    activeOrderStatus?: string | null;
 }
 
 export interface TableGroupedDto {

@@ -38,5 +38,16 @@ export const tableService = {
 
     deleteTableCategory: (id: number) => apiClient.delete<void>(`/api/table-category/${id}`),
 
-    resolveByQrToken: (qrToken: string) => apiClient.get<RestaurantTableDto>(`/api/tables/resolve/${qrToken}`)
+    resolveByQrToken: (qrToken: string) => apiClient.get<RestaurantTableDto>(`/api/tables/resolve/${qrToken}`),
+
+    getAvailable: (partySize: number, seating?: string) => {
+        let url = `/api/tables/available?partySize=${partySize}`;
+        if (seating) {
+            url += `&seating=${encodeURIComponent(seating)}`;
+        }
+        return apiClient.get<RestaurantTableDto[]>(url);
+    },
+
+    assignTable: (id: number, data: { guestName: string; phone: string; partySize: number; notes?: string }) => 
+        apiClient.post<{ message: string; orderId: number }>(`/api/tables/${id}/assign`, data)
 };

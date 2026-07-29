@@ -11,6 +11,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTheme } from "@/lib/theme";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingsService, GeneralSettings } from "@/api/services/settingsService";
@@ -167,11 +168,21 @@ function SettingsPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <Label>Currency</Label>
-                    <Input 
-                      value={form.currency || ""} 
-                      onChange={(e) => setForm(prev => ({ ...prev, currency: e.target.value }))}
-                      className="rounded-xl mt-1" 
-                    />
+                    <Select 
+                      value={form.currency || "INR (₹)"} 
+                      onValueChange={(val) => setForm(prev => ({ ...prev, currency: val }))}
+                    >
+                      <SelectTrigger className="rounded-xl mt-1">
+                        <SelectValue placeholder="Select Currency" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="INR (₹)">INR (₹)</SelectItem>
+                        <SelectItem value="USD ($)">USD ($)</SelectItem>
+                        <SelectItem value="EUR (€)">EUR (€)</SelectItem>
+                        <SelectItem value="GBP (£)">GBP (£)</SelectItem>
+                        <SelectItem value="AED (د.إ)">AED (د.إ)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label>Service charge %</Label>
@@ -210,6 +221,17 @@ function SettingsPage() {
                       type="number"
                       value={form.waitlistEstimatedWaitMinutes ?? 22} 
                       onChange={(e) => setForm(prev => ({ ...prev, waitlistEstimatedWaitMinutes: parseInt(e.target.value) || 0 }))}
+                      className="rounded-xl mt-1" 
+                    />
+                  </div>
+                  <div>
+                    <Label>Minimum advance booking (%)</Label>
+                    <Input 
+                      type="number"
+                      min={0}
+                      max={100}
+                      value={form.minimumAdvancePercent ?? 0} 
+                      onChange={(e) => setForm(prev => ({ ...prev, minimumAdvancePercent: parseFloat(e.target.value) || 0 }))}
                       className="rounded-xl mt-1" 
                     />
                   </div>

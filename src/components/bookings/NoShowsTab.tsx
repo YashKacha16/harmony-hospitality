@@ -1,12 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { bookingService } from "@/api/services/bookingService";
+import { settingsService } from "@/api/services/settingsService";
 
 export function NoShowsTab() {
   const { data: bookings = [] } = useQuery({
     queryKey: ["bookings", "No-Show"],
     queryFn: () => bookingService.getAll("No-Show"),
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+  });
+
+  const currencySymbol = settings?.currency ? (settings.currency.match(/\(([^)]+)\)/)?.[1] || settings.currency) : "₹";
 
   return (
     <Card className="rounded-2xl overflow-hidden mt-4">
@@ -36,7 +44,7 @@ export function NoShowsTab() {
                 <td className="px-4 py-3">{b.room ? `Room ${b.room.number}` : "-"}</td>
                 <td className="px-4 py-3">{new Date(b.checkInDate).toLocaleDateString()}</td>
                 <td className="px-4 py-3 text-right text-primary font-medium">
-                  {b.forfeitedAmount != null ? `$${b.forfeitedAmount}` : "-"}
+                  {b.forfeitedAmount != null ? `${currencySymbol}${b.forfeitedAmount}` : "-"}
                 </td>
               </tr>
             ))}

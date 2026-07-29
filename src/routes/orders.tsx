@@ -28,6 +28,8 @@ export const Route = createFileRoute("/orders")({
       tableId: search.tableId ? Number(search.tableId) : undefined,
       mergeGroupId: search.mergeGroupId ? Number(search.mergeGroupId) : undefined,
       editOrderId: search.editOrderId ? Number(search.editOrderId) : undefined,
+      tab: search.tab ? String(search.tab) : undefined,
+      roomNumber: search.roomNumber ? String(search.roomNumber) : undefined,
     };
   },
   head: () => ({ meta: [{ title: "Orders — Aurelia" }, { name: "description", content: "Dine-in, room service and parcel orders with a live kitchen board." }] }),
@@ -66,6 +68,15 @@ function OrdersPage() {
 
   // SignalR connection reference
   const connectionRef = useRef<signalR.HubConnection | null>(null);
+
+  useEffect(() => {
+    if (search.tab === "room-service") {
+      setSourceTab("Room Service");
+    }
+    if (search.roomNumber) {
+      setRoomNumber(search.roomNumber);
+    }
+  }, [search.tab, search.roomNumber]);
 
   const mappedOrderType = (tab: string) => {
     if (tab === "Dine-in") return "DineIn";

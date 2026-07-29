@@ -2,12 +2,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Utensils, Receipt, ArrowLeftRight, LogOut } from "lucide-react";
 import type { BookingDto } from "@/api/services/bookingService";
+import { useNavigate } from "@tanstack/react-router";
 
 interface Props {
   bookings: BookingDto[];
 }
 
 export function ActiveGuestsTab({ bookings }: Props) {
+  const navigate = useNavigate();
+
   if (bookings.length === 0) {
     return (
       <div className="mt-8 text-center text-muted-foreground">
@@ -38,7 +41,24 @@ export function ActiveGuestsTab({ bookings }: Props) {
           </div>
           
           <div className="mt-4 pt-4 border-t flex justify-between items-center text-muted-foreground">
-            <Button variant="ghost" size="icon" className="hover:text-primary"><Utensils className="size-4" /></Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="hover:text-primary"
+              onClick={() => {
+                if (b.room) {
+                  navigate({
+                    to: "/orders",
+                    search: {
+                      tab: "room-service",
+                      roomNumber: b.room.number
+                    }
+                  });
+                }
+              }}
+            >
+              <Utensils className="size-4" />
+            </Button>
             <Button variant="ghost" size="icon" className="hover:text-primary"><Receipt className="size-4" /></Button>
             <Button variant="ghost" size="icon" className="hover:text-primary"><ArrowLeftRight className="size-4" /></Button>
             <Button variant="ghost" size="icon" className="hover:text-[color:var(--warning)]"><LogOut className="size-4" /></Button>

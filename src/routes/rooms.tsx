@@ -531,6 +531,21 @@ function AddRoomSheet() {
   const [imageBase64, setImageBase64] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!open) {
+      setNumber("");
+      setFloor("");
+      setDescription("");
+      setStatus("Available");
+      setSelectedCategoryName("");
+      setSelectedAmenities(["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"]);
+      setCapacity("");
+      setPrice("");
+      setImageFile(null);
+      setImageBase64(null);
+    }
+  }, [open]);
+
+  useEffect(() => {
     if (selectedCategory) {
       setSelectedAmenities((selectedCategory.amenities || "").split(',').map(s => s.trim()).filter(Boolean));
       if (selectedCategory.capacity) setCapacity(selectedCategory.capacity.toString());

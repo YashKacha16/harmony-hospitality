@@ -1,15 +1,25 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Ban, AlertTriangle } from "lucide-react";
+import { Ban, AlertTriangle, UserCheck } from "lucide-react";
 import type { BookingDto } from "@/api/services/bookingService";
+import { useQuery } from "@tanstack/react-query";
+import { settingsService } from "@/api/services/settingsService";
 
 interface Props {
   bookings: BookingDto[];
   onCancel: (b: BookingDto) => void;
   onNoShow: (b: BookingDto) => void;
+  onCheckIn: (b: BookingDto) => void;
 }
 
-export function ReservationsTab({ bookings, onCancel, onNoShow }: Props) {
+export function ReservationsTab({ bookings, onCancel, onNoShow, onCheckIn }: Props) {
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+  });
+
+  const currencySymbol = settings?.currency ? (settings.currency.match(/\(([^)]+)\)/)?.[1] || settings.currency) : "₹";
+
   return (
     <Card className="rounded-2xl overflow-hidden mt-4">
       <div className="overflow-x-auto">
@@ -55,9 +65,12 @@ export function ReservationsTab({ bookings, onCancel, onNoShow }: Props) {
                   <div className="text-xs text-muted-foreground">{b.checkInTime}</div>
                 </td>
                 <td className="px-4 py-3">{b.source}</td>
-                <td className="px-4 py-3">${b.advanceAmount}</td>
+                <td className="px-4 py-3">{currencySymbol}{b.advanceAmount}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => onCheckIn(b)} className="text-muted-foreground hover:text-emerald-500" title="Check-in Guest">
+                      <UserCheck className="size-4" />
+                    </Button>
                     <Button variant="ghost" size="icon" onClick={() => onCancel(b)} className="text-muted-foreground hover:text-destructive" title="Cancel Booking">
                       <Ban className="size-4" />
                     </Button>

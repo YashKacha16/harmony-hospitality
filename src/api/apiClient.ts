@@ -47,7 +47,7 @@ export const apiClient = {
         return this.request<T>(endpoint, {
             ...options,
             method: 'POST',
-            body: JSON.stringify(body),
+            body: body instanceof FormData ? body : JSON.stringify(body),
         });
     },
 
@@ -55,7 +55,7 @@ export const apiClient = {
         return this.request<T>(endpoint, {
             ...options,
             method: 'PUT',
-            body: JSON.stringify(body),
+            body: body instanceof FormData ? body : JSON.stringify(body),
         });
     },
 

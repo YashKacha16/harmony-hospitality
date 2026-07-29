@@ -1,12 +1,20 @@
 import { Card } from "@/components/ui/card";
 import { useQuery } from "@tanstack/react-query";
 import { bookingService } from "@/api/services/bookingService";
+import { settingsService } from "@/api/services/settingsService";
 
 export function CancellationsTab() {
   const { data: bookings = [] } = useQuery({
     queryKey: ["bookings", "Cancelled"],
     queryFn: () => bookingService.getAll("Cancelled"),
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ["settings"],
+    queryFn: () => settingsService.getGeneralSettings(),
+  });
+
+  const currencySymbol = settings?.currency ? (settings.currency.match(/\(([^)]+)\)/)?.[1] || settings.currency) : "₹";
 
   return (
     <Card className="rounded-2xl overflow-hidden mt-4">
@@ -36,9 +44,9 @@ export function CancellationsTab() {
                 <td className="px-4 py-3">{b.guestName}</td>
                 <td className="px-4 py-3">{b.room ? `Room ${b.room.number}` : "-"}</td>
                 <td className="px-4 py-3">{new Date(b.checkInDate).toLocaleDateString()}</td>
-                <td className="px-4 py-3">${b.advanceAmount}</td>
+                <td className="px-4 py-3">{currencySymbol}{b.advanceAmount}</td>
                 <td className="px-4 py-3 text-right text-destructive font-medium">
-                  {b.refundAmount != null ? `$${b.refundAmount}` : "-"}
+                  {b.refundAmount != null ? `${currencySymbol}${b.refundAmount}` : "-"}
                 </td>
               </tr>
             ))}

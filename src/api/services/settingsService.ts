@@ -14,6 +14,7 @@ export interface GeneralSettings {
   sgstPercent: number;
   waitlistEstimatedWaitMinutes?: number;
   waitlistMessage?: string;
+  minimumAdvancePercent?: number;
 }
 
 export const settingsService = {

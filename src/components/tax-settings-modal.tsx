@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { getTaxSettings, saveTaxSettings } from "@/lib/taxSettings";
 import { Settings } from "lucide-react";
@@ -45,11 +46,21 @@ export function TaxSettingsModal() {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground ml-1">Currency</Label>
-              <Input 
-                value={taxConfig.currency} 
-                onChange={(e) => setTaxConfig(prev => ({ ...prev, currency: e.target.value }))}
-                className="rounded-xl bg-muted/30 border-border/50 h-10 transition-colors focus:bg-background" 
-              />
+              <Select 
+                value={taxConfig.currency || "INR (₹)"} 
+                onValueChange={(val) => setTaxConfig(prev => ({ ...prev, currency: val }))}
+              >
+                <SelectTrigger className="rounded-xl bg-muted/30 border-border/50 h-10 transition-colors focus:bg-background text-left">
+                  <SelectValue placeholder="Select Currency" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="INR (₹)">INR (₹)</SelectItem>
+                  <SelectItem value="USD ($)">USD ($)</SelectItem>
+                  <SelectItem value="EUR (€)">EUR (€)</SelectItem>
+                  <SelectItem value="GBP (£)">GBP (£)</SelectItem>
+                  <SelectItem value="AED (د.إ)">AED (د.إ)</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium text-muted-foreground ml-1">Service charge %</Label>

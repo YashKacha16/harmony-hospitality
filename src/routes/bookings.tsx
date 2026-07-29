@@ -60,6 +60,18 @@ function BookingsPage() {
     }
   });
 
+  const checkInMutation = useMutation({
+    mutationFn: async (id: number) => bookingService.update(id, { status: "Checked-in" }),
+    onSuccess: () => {
+      toast.success("Guest checked in successfully.");
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["rooms"] });
+    },
+    onError: () => {
+      toast.error("Failed to check in guest.");
+    }
+  });
+
   return (
     <AppShell
       title="Bookings"
@@ -92,6 +104,7 @@ function BookingsPage() {
               bookings={upcomingBookings} 
               onCancel={setCancelBooking}
               onNoShow={setNoShowBooking}
+              onCheckIn={(b) => checkInMutation.mutate(b.id)}
             />
           </TabsContent>
           <TabsContent value="active" className="flex-1 overflow-auto m-0 p-0">

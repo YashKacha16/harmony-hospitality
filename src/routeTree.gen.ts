@@ -14,15 +14,14 @@ import { Route as BillingRouteImport } from './routes/billing'
 import { Route as BookingsRouteImport } from './routes/bookings'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as EmployeesRouteImport } from './routes/employees'
-import { Route as HousekeepingRouteImport } from './routes/housekeeping'
 import { Route as MenuRouteImport } from './routes/menu'
 import { Route as OrdersRouteImport } from './routes/orders'
-import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as RoomsRouteImport } from './routes/rooms'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as TablesRouteImport } from './routes/tables'
 import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as OrderTokenRouteImport } from './routes/order.$token'
+import { Route as PrintBookingBookingIdRouteImport } from './routes/print-booking.$bookingId'
 import { Route as PrintBillIdRouteImport } from './routes/print.$billId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -50,11 +49,6 @@ const EmployeesRoute = EmployeesRouteImport.update({
   path: '/employees',
   getParentRoute: () => rootRouteImport,
 } as any)
-const HousekeepingRoute = HousekeepingRouteImport.update({
-  id: '/housekeeping',
-  path: '/housekeeping',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const MenuRoute = MenuRouteImport.update({
   id: '/menu',
   path: '/menu',
@@ -63,11 +57,6 @@ const MenuRoute = MenuRouteImport.update({
 const OrdersRoute = OrdersRouteImport.update({
   id: '/orders',
   path: '/orders',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReportsRoute = ReportsRouteImport.update({
-  id: '/reports',
-  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RoomsRoute = RoomsRouteImport.update({
@@ -95,6 +84,11 @@ const OrderTokenRoute = OrderTokenRouteImport.update({
   path: '/order/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrintBookingBookingIdRoute = PrintBookingBookingIdRouteImport.update({
+  id: '/print-booking/$bookingId',
+  path: '/print-booking/$bookingId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrintBillIdRoute = PrintBillIdRouteImport.update({
   id: '/print/$billId',
   path: '/print/$billId',
@@ -107,15 +101,14 @@ export interface FileRoutesByFullPath {
   '/bookings': typeof BookingsRoute
   '/dashboard': typeof DashboardRoute
   '/employees': typeof EmployeesRoute
-  '/housekeeping': typeof HousekeepingRoute
   '/menu': typeof MenuRoute
   '/orders': typeof OrdersRoute
-  '/reports': typeof ReportsRoute
   '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
   '/tables': typeof TablesRoute
   '/waitlist': typeof WaitlistRoute
   '/order/$token': typeof OrderTokenRoute
+  '/print-booking/$bookingId': typeof PrintBookingBookingIdRoute
   '/print/$billId': typeof PrintBillIdRoute
 }
 export interface FileRoutesByTo {
@@ -124,15 +117,14 @@ export interface FileRoutesByTo {
   '/bookings': typeof BookingsRoute
   '/dashboard': typeof DashboardRoute
   '/employees': typeof EmployeesRoute
-  '/housekeeping': typeof HousekeepingRoute
   '/menu': typeof MenuRoute
   '/orders': typeof OrdersRoute
-  '/reports': typeof ReportsRoute
   '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
   '/tables': typeof TablesRoute
   '/waitlist': typeof WaitlistRoute
   '/order/$token': typeof OrderTokenRoute
+  '/print-booking/$bookingId': typeof PrintBookingBookingIdRoute
   '/print/$billId': typeof PrintBillIdRoute
 }
 export interface FileRoutesById {
@@ -142,15 +134,14 @@ export interface FileRoutesById {
   '/bookings': typeof BookingsRoute
   '/dashboard': typeof DashboardRoute
   '/employees': typeof EmployeesRoute
-  '/housekeeping': typeof HousekeepingRoute
   '/menu': typeof MenuRoute
   '/orders': typeof OrdersRoute
-  '/reports': typeof ReportsRoute
   '/rooms': typeof RoomsRoute
   '/settings': typeof SettingsRoute
   '/tables': typeof TablesRoute
   '/waitlist': typeof WaitlistRoute
   '/order/$token': typeof OrderTokenRoute
+  '/print-booking/$bookingId': typeof PrintBookingBookingIdRoute
   '/print/$billId': typeof PrintBillIdRoute
 }
 export interface FileRouteTypes {
@@ -161,15 +152,14 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/dashboard'
     | '/employees'
-    | '/housekeeping'
     | '/menu'
     | '/orders'
-    | '/reports'
     | '/rooms'
     | '/settings'
     | '/tables'
     | '/waitlist'
     | '/order/$token'
+    | '/print-booking/$bookingId'
     | '/print/$billId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -178,15 +168,14 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/dashboard'
     | '/employees'
-    | '/housekeeping'
     | '/menu'
     | '/orders'
-    | '/reports'
     | '/rooms'
     | '/settings'
     | '/tables'
     | '/waitlist'
     | '/order/$token'
+    | '/print-booking/$bookingId'
     | '/print/$billId'
   id:
     | '__root__'
@@ -195,15 +184,14 @@ export interface FileRouteTypes {
     | '/bookings'
     | '/dashboard'
     | '/employees'
-    | '/housekeeping'
     | '/menu'
     | '/orders'
-    | '/reports'
     | '/rooms'
     | '/settings'
     | '/tables'
     | '/waitlist'
     | '/order/$token'
+    | '/print-booking/$bookingId'
     | '/print/$billId'
   fileRoutesById: FileRoutesById
 }
@@ -213,15 +201,14 @@ export interface RootRouteChildren {
   BookingsRoute: typeof BookingsRoute
   DashboardRoute: typeof DashboardRoute
   EmployeesRoute: typeof EmployeesRoute
-  HousekeepingRoute: typeof HousekeepingRoute
   MenuRoute: typeof MenuRoute
   OrdersRoute: typeof OrdersRoute
-  ReportsRoute: typeof ReportsRoute
   RoomsRoute: typeof RoomsRoute
   SettingsRoute: typeof SettingsRoute
   TablesRoute: typeof TablesRoute
   WaitlistRoute: typeof WaitlistRoute
   OrderTokenRoute: typeof OrderTokenRoute
+  PrintBookingBookingIdRoute: typeof PrintBookingBookingIdRoute
   PrintBillIdRoute: typeof PrintBillIdRoute
 }
 
@@ -262,13 +249,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeesRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/housekeeping': {
-      id: '/housekeeping'
-      path: '/housekeeping'
-      fullPath: '/housekeeping'
-      preLoaderRoute: typeof HousekeepingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/menu': {
       id: '/menu'
       path: '/menu'
@@ -281,13 +261,6 @@ declare module '@tanstack/react-router' {
       path: '/orders'
       fullPath: '/orders'
       preLoaderRoute: typeof OrdersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reports': {
-      id: '/reports'
-      path: '/reports'
-      fullPath: '/reports'
-      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/rooms': {
@@ -325,6 +298,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OrderTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/print-booking/$bookingId': {
+      id: '/print-booking/$bookingId'
+      path: '/print-booking/$bookingId'
+      fullPath: '/print-booking/$bookingId'
+      preLoaderRoute: typeof PrintBookingBookingIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/print/$billId': {
       id: '/print/$billId'
       path: '/print/$billId'
@@ -341,15 +321,14 @@ const rootRouteChildren: RootRouteChildren = {
   BookingsRoute: BookingsRoute,
   DashboardRoute: DashboardRoute,
   EmployeesRoute: EmployeesRoute,
-  HousekeepingRoute: HousekeepingRoute,
   MenuRoute: MenuRoute,
   OrdersRoute: OrdersRoute,
-  ReportsRoute: ReportsRoute,
   RoomsRoute: RoomsRoute,
   SettingsRoute: SettingsRoute,
   TablesRoute: TablesRoute,
   WaitlistRoute: WaitlistRoute,
   OrderTokenRoute: OrderTokenRoute,
+  PrintBookingBookingIdRoute: PrintBookingBookingIdRoute,
   PrintBillIdRoute: PrintBillIdRoute,
 }
 export const routeTree = rootRouteImport

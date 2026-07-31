@@ -4,6 +4,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { bookingService, type BookingDto } from "@/api/services/bookingService";
+import { settingsService } from "@/api/services/settingsService";
+import { extractCurrencySymbol } from "@/lib/utils";
+import { permissionService } from "@/lib/permissionService";
 import { ReservationsTab } from "@/components/bookings/ReservationsTab";
 import { ActiveGuestsTab } from "@/components/bookings/ActiveGuestsTab";
 import { CancellationsTab } from "@/components/bookings/CancellationsTab";
@@ -22,6 +25,15 @@ function BookingsPage() {
   const [activeTab, setActiveTab] = useState("reservations");
   const [cancelBooking, setCancelBooking] = useState<BookingDto | null>(null);
   const [noShowBooking, setNoShowBooking] = useState<BookingDto | null>(null);
+
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
+  const canAdd = permissionService.hasPermission(user.role, "bookings", "add");
+  const canDelete = permissionService.hasPermission(user.role, "bookings", "delete");
+  const canEdit = permissionService.hasPermission(user.role, "bookings", "edit");
+
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: settingsService.getGeneralSettings });
+  const currency = extractCurrencySymbol(settings?.currency);
   
   const queryClient = useQueryClient();
 
@@ -96,7 +108,7 @@ function BookingsPage() {
               <TabsTrigger value="cancellations">Cancellations & Refunds</TabsTrigger>
               <TabsTrigger value="noshows">No-Shows</TabsTrigger>
             </TabsList>
-            <NewCheckInDrawer />
+            {canAdd && <NewCheckInDrawer />}
           </div>
 
           <TabsContent value="reservations" className="flex-1 overflow-auto m-0 p-0">
@@ -105,6 +117,8 @@ function BookingsPage() {
               onCancel={setCancelBooking}
               onNoShow={setNoShowBooking}
               onCheckIn={(b) => checkInMutation.mutate(b.id)}
+              canCheckIn={canEdit}
+              canCancel={canDelete}
             />
           </TabsContent>
           <TabsContent value="active" className="flex-1 overflow-auto m-0 p-0">
@@ -152,7 +166,7 @@ function BookingsPage() {
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div><span className="text-muted-foreground">Guest:</span> {cancelBooking?.guestName}</div>
                 <div><span className="text-muted-foreground">Room:</span> {cancelBooking?.room?.number || "-"}</div>
-                <div><span className="text-muted-foreground">Advance:</span> ${cancelBooking?.advanceAmount}</div>
+                <div><span className="text-muted-foreground">Advance:</span> {currency}{cancelBooking?.advanceAmount}</div>
               </div>
             </div>
             

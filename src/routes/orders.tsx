@@ -21,6 +21,7 @@ import { BASE_URL } from "@/api/apiClient";
 import { getTaxSettings } from "@/lib/taxSettings";
 import * as signalR from "@microsoft/signalr";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { permissionService } from "@/lib/permissionService";
 
 export const Route = createFileRoute("/orders")({
   validateSearch: (search: Record<string, unknown>) => {
@@ -42,7 +43,15 @@ function OrdersPage() {
   const queryClient = useQueryClient();
   const search = Route.useSearch();
   const navigate = useNavigate();
-  const [kds, setKds] = useState(false);
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
+  const hasWaiterSide = permissionService.hasPermission(user.role, "orders", "waiterSide");
+  const hasKitchenSide = permissionService.hasPermission(user.role, "orders", "kitchenSide");
+
+  const [kds, setKds] = useState(() => {
+    if (hasKitchenSide && !hasWaiterSide) return true;
+    return false;
+  });
   const [sourceTab, setSourceTab] = useState("Dine-in");
   const [activeMenuCat, setActiveMenuCat] = useState<number | null>(null);
 
@@ -493,10 +502,12 @@ function OrdersPage() {
             <TabsTrigger value="Parcel" className="rounded-lg px-4 py-2 font-medium">Parcel</TabsTrigger>
           </TabsList>
         </Tabs>
-        <label className="flex items-center gap-2.5 text-sm font-semibold select-none cursor-pointer">
-          <Switch checked={kds} onCheckedChange={setKds} />
-          Kitchen display mode
-        </label>
+        {hasWaiterSide && hasKitchenSide && (
+          <label className="flex items-center gap-2.5 text-sm font-semibold select-none cursor-pointer">
+            <Switch checked={kds} onCheckedChange={setKds} />
+            Kitchen display mode
+          </label>
+        )}
       </div>
 
       {!kds && (

@@ -14,6 +14,7 @@ import { Plus, Upload, Phone } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { permissionService } from "@/lib/permissionService";
 
 export const Route = createFileRoute("/employees")({
   head: () => ({ meta: [{ title: "Employees — Aurelia" }, { name: "description", content: "Team directory, roles, shifts and attendance for hotel & restaurant staff." }] }),
@@ -35,6 +36,13 @@ function EmpPage() {
     queryFn: employeeService.getAll
   });
 
+  const { data: dbRoles = [] } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => permissionService.getRoles()
+  });
+
+  const roleNames = dbRoles.length > 0 ? dbRoles.map(r => r.name) : ["Admin", "Waiter", "Chef"];
+
   const updateMutation = useMutation({
     mutationFn: ({ id, employee }: { id: number; employee: any }) => employeeService.update(id, employee),
     onSuccess: () => {
@@ -54,15 +62,9 @@ function EmpPage() {
 
   return (
     <AppShell title="Employees" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Employees" }]}>
-      <div className="flex justify-end mb-4"><AddEmpSheet /></div>
+      <div className="flex justify-end mb-4"><AddEmpSheet roles={roleNames} /></div>
 
-      <Tabs defaultValue="directory">
-        <TabsList className="rounded-xl mb-4">
-          <TabsTrigger value="directory" className="rounded-lg">Directory</TabsTrigger>
-          <TabsTrigger value="attendance" className="rounded-lg">Attendance</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="directory" className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
           {employees.map(e => (
             <Card key={e.id} className="p-5 rounded-2xl">
               <div className="flex items-center gap-3">
@@ -80,59 +82,20 @@ function EmpPage() {
               <div className="mt-3 flex gap-2">
                 <Select defaultValue={e.role} onValueChange={(val: string) => updateMutation.mutate({ id: e.id!, employee: { ...e, role: val } })}>
                   <SelectTrigger className="h-8 rounded-lg text-xs flex-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                  <SelectContent>{roleNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
                 </Select>
-                <EditEmpSheet employee={e} />
+                <EditEmpSheet employee={e} roles={roleNames} />
               </div>
             </Card>
           ))}
-        </TabsContent>
-
-        <TabsContent value="attendance">
-          <Card className="p-4 rounded-2xl overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-left text-xs uppercase tracking-widest text-muted-foreground">
-                  <th className="px-3 py-2">Employee</th>
-                  {shifts.map(s => <th key={s} className="px-2 py-2 text-center">{s}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {employees.map((e, ei) => (
-                  <tr key={e.id} className="border-t border-border">
-                    <td className="px-3 py-2 flex items-center gap-2"><Avatar className="size-6"><AvatarImage src={getPhotoUrl(e.photoPath)} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>{e.name}</td>
-                    {shifts.map((_, i) => {
-                      const state = (ei + i) % 5 === 0 ? "off" : (ei + i) % 7 === 0 ? "leave" : "on";
-                      return (
-                        <td key={i} className="px-2 py-2 text-center">
-                          <span className={cn(
-                            "inline-block size-6 rounded-md",
-                            state === "on" && "bg-success/20",
-                            state === "off" && "bg-muted",
-                            state === "leave" && "bg-warning/30",
-                          )} />
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <div className="mt-3 flex gap-4 text-xs text-muted-foreground">
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded bg-success/30" /> On shift</span>
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded bg-muted" /> Off</span>
-              <span className="flex items-center gap-1.5"><span className="size-3 rounded bg-warning/30" /> Leave</span>
-            </div>
-          </Card>
-        </TabsContent>
-      </Tabs>
+      </div>
     </AppShell>
   );
 }
 
-function AddEmpSheet() {
+function AddEmpSheet({ roles }: { roles: string[] }) {
   const [open, setOpen] = useState(false);
-  const [role, setRole] = useState("Waiter");
+  const [role, setRole] = useState(roles[0] || "Waiter");
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
@@ -191,10 +154,10 @@ function AddEmpSheet() {
             <div><Label>Password</Label><Input name="password" type="password" className="rounded-xl mt-1" required autoComplete="new-password" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><Label>Role</Label>
+             <div><Label>Role</Label>
               <Select value={role} onValueChange={setRole}>
-                <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Waiter" /></SelectTrigger>
-                <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder={roles[0] || "Waiter"} /></SelectTrigger>
+                <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div><Label>Joining date</Label><Input name="joined" type="date" className="rounded-xl mt-1" /></div>
@@ -206,7 +169,7 @@ function AddEmpSheet() {
   );
 }
 
-function EditEmpSheet({ employee }: { employee: any }) {
+function EditEmpSheet({ employee, roles }: { employee: any; roles: string[] }) {
   const [open, setOpen] = useState(false);
   const queryClient = useQueryClient();
   const updateMutation = useMutation({
@@ -261,7 +224,7 @@ function EditEmpSheet({ employee }: { employee: any }) {
             <div><Label>Role</Label>
               <Select name="role" defaultValue={employee.role}>
                 <SelectTrigger className="rounded-xl mt-1"><SelectValue /></SelectTrigger>
-                <SelectContent>{["Admin", "Reception", "Waiter", "Cook", "Housekeeping"].map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
               </Select>
             </div>
             <div><Label>Status</Label>

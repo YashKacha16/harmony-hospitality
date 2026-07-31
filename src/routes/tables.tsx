@@ -17,6 +17,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { tableService } from "@/api/services/tableService";
 import { orderService } from "@/api/services/orderService";
 import { TableQrModal } from "@/components/TableQrModal";
+import { permissionService } from "@/lib/permissionService";
 
 export const Route = createFileRoute("/tables")({
   head: () => ({ 
@@ -47,6 +48,13 @@ const statusLegendColors: Record<string, string> = {
 function TablesPage() {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
+  const canAdd = permissionService.hasPermission(user.role, "tables", "add");
+  const canDelete = permissionService.hasPermission(user.role, "tables", "delete");
+  const canEdit = permissionService.hasPermission(user.role, "tables", "edit");
+
   const [zone, setZone] = useState("All");
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
@@ -258,30 +266,36 @@ function TablesPage() {
           </TabsList>
         </Tabs>
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            className="rounded-xl"
-            onClick={() => setIsManageZonesOpen(true)}
-          >
-            Manage zones
-          </Button>
-          <Button 
-            variant={selectMode ? "default" : "outline"} 
-            className="rounded-xl" 
-            onClick={() => { 
-              setSelectMode(!selectMode); 
-              setSelectedIds([]); 
-              setShowStatusDropdown(false);
-              setShowCategoryDropdown(false);
-              setShowDeleteConfirm(false);
-            }}
-          >
-            <MousePointerClick className="size-4 mr-1" /> 
-            {selectMode ? "Selecting…" : "Select mode"}
-          </Button>
-          <Button variant="outline" className="rounded-xl animate-pulse bg-primary/10 border-primary text-primary" onClick={() => setIsAddOpen(true)}>
-            <Plus className="size-4 mr-1" /> Add table
-          </Button>
+          {canEdit && (
+            <Button 
+              variant="outline" 
+              className="rounded-xl"
+              onClick={() => setIsManageZonesOpen(true)}
+            >
+              Manage zones
+            </Button>
+          )}
+          {(canEdit || canDelete) && (
+            <Button 
+              variant={selectMode ? "default" : "outline"} 
+              className="rounded-xl" 
+              onClick={() => { 
+                setSelectMode(!selectMode); 
+                setSelectedIds([]); 
+                setShowStatusDropdown(false);
+                setShowCategoryDropdown(false);
+                setShowDeleteConfirm(false);
+              }}
+            >
+              <MousePointerClick className="size-4 mr-1" /> 
+              {selectMode ? "Selecting…" : "Select mode"}
+            </Button>
+          )}
+          {canAdd && (
+            <Button variant="outline" className="rounded-xl animate-pulse bg-primary/10 border-primary text-primary" onClick={() => setIsAddOpen(true)}>
+              <Plus className="size-4 mr-1" /> Add table
+            </Button>
+          )}
         </div>
       </div>
 
@@ -381,101 +395,109 @@ function TablesPage() {
           </div>
 
           <div className="flex items-center gap-2 flex-wrap">
-            <Button 
-              size="sm" 
-              className="rounded-xl bg-special text-white hover:bg-special/95"
-              disabled={!canMerge}
-              onClick={() => mergeMutation.mutate(selectedIds)}
-            >
-              <Combine className="size-4 mr-1" /> Merge
-            </Button>
-
-            <div className="relative">
+            {canEdit && (
               <Button 
                 size="sm" 
-                variant="outline" 
-                className="rounded-xl"
-                onClick={() => {
-                  setShowStatusDropdown(!showStatusDropdown);
-                  setShowCategoryDropdown(false);
-                  setShowDeleteConfirm(false);
-                }}
+                className="rounded-xl bg-special text-white hover:bg-special/95"
+                disabled={!canMerge}
+                onClick={() => mergeMutation.mutate(selectedIds)}
               >
-                Change status <ChevronDown className="size-4 ml-1" />
+                <Combine className="size-4 mr-1" /> Merge
               </Button>
-              {showStatusDropdown && (
-                <div className="absolute bottom-full mb-2 left-0 w-40 bg-background border border-border rounded-xl shadow-xl p-1.5 flex flex-col gap-1 z-50">
-                  {["Free", "Occupied", "Reserved", "Cleaning"].map((status) => (
-                    <button
-                      key={status}
-                      className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted font-medium transition-colors"
-                      onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status })}
-                    >
-                      {status}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
+            )}
 
-            <div className="relative">
-              <Button 
-                size="sm" 
-                variant="outline" 
-                className="rounded-xl"
-                onClick={() => {
-                  setShowCategoryDropdown(!showCategoryDropdown);
-                  setShowStatusDropdown(false);
-                  setShowDeleteConfirm(false);
-                }}
-              >
-                Change category <ChevronDown className="size-4 ml-1" />
-              </Button>
-              {showCategoryDropdown && (
-                <div className="absolute bottom-full mb-2 left-0 w-48 max-h-56 overflow-y-auto bg-background border border-border rounded-xl shadow-xl p-1.5 flex flex-col gap-1 z-50">
-                  {tableCategories.map((cat) => (
-                    <button
-                      key={cat.id}
-                      className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted font-medium transition-colors"
-                      onClick={() => bulkCategoryMutation.mutate({ ids: selectedIds, catId: cat.id })}
-                    >
-                      {cat.name}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="relative">
-              <Button 
-                size="sm" 
-                variant="destructive" 
-                className="rounded-xl"
-                onClick={() => {
-                  setShowDeleteConfirm(!showDeleteConfirm);
-                  setShowStatusDropdown(false);
-                  setShowCategoryDropdown(false);
-                }}
-              >
-                <Trash2 className="size-4 mr-1" /> Delete
-              </Button>
-              {showDeleteConfirm && (
-                <div className="absolute bottom-full mb-2 right-0 w-64 bg-background border border-destructive/20 rounded-xl shadow-2xl p-4 flex flex-col gap-3 z-50">
-                  <div className="text-xs text-muted-foreground flex gap-1.5 items-start">
-                    <AlertTriangle className="size-4 text-destructive shrink-0" />
-                    <span>Are you sure you want to delete these {selectedIds.length} tables? Occupied tables will be skipped.</span>
+            {canEdit && (
+              <div className="relative">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="rounded-xl"
+                  onClick={() => {
+                    setShowStatusDropdown(!showStatusDropdown);
+                    setShowCategoryDropdown(false);
+                    setShowDeleteConfirm(false);
+                  }}
+                >
+                  Change status <ChevronDown className="size-4 ml-1" />
+                </Button>
+                {showStatusDropdown && (
+                  <div className="absolute bottom-full mb-2 left-0 w-40 bg-background border border-border rounded-xl shadow-xl p-1.5 flex flex-col gap-1 z-50">
+                    {["Free", "Occupied", "Reserved", "Cleaning"].map((status) => (
+                      <button
+                        key={status}
+                        className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted font-medium transition-colors"
+                        onClick={() => bulkStatusMutation.mutate({ ids: selectedIds, status })}
+                      >
+                        {status}
+                      </button>
+                    ))}
                   </div>
-                  <div className="flex gap-2 justify-end">
-                    <Button size="sm" variant="outline" className="rounded-lg text-xs" onClick={() => setShowDeleteConfirm(false)}>
-                      Cancel
-                    </Button>
-                    <Button size="sm" variant="destructive" className="rounded-lg text-xs" onClick={() => bulkDeleteMutation.mutate(selectedIds)}>
-                      Confirm
-                    </Button>
+                )}
+              </div>
+            )}
+
+            {canEdit && (
+              <div className="relative">
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="rounded-xl"
+                  onClick={() => {
+                    setShowCategoryDropdown(!showCategoryDropdown);
+                    setShowStatusDropdown(false);
+                    setShowDeleteConfirm(false);
+                  }}
+                >
+                  Change category <ChevronDown className="size-4 ml-1" />
+                </Button>
+                {showCategoryDropdown && (
+                  <div className="absolute bottom-full mb-2 left-0 w-48 max-h-56 overflow-y-auto bg-background border border-border rounded-xl shadow-xl p-1.5 flex flex-col gap-1 z-50">
+                    {tableCategories.map((cat) => (
+                      <button
+                        key={cat.id}
+                        className="w-full text-left px-3 py-1.5 text-xs rounded-lg hover:bg-muted font-medium transition-colors"
+                        onClick={() => bulkCategoryMutation.mutate({ ids: selectedIds, catId: cat.id })}
+                      >
+                        {cat.name}
+                      </button>
+                    ))}
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
+
+            {canDelete && (
+              <div className="relative">
+                <Button 
+                  size="sm" 
+                  variant="destructive" 
+                  className="rounded-xl"
+                  onClick={() => {
+                    setShowDeleteConfirm(!showDeleteConfirm);
+                    setShowStatusDropdown(false);
+                    setShowCategoryDropdown(false);
+                  }}
+                >
+                  <Trash2 className="size-4 mr-1" /> Delete
+                </Button>
+                {showDeleteConfirm && (
+                  <div className="absolute bottom-full mb-2 right-0 w-64 bg-background border border-destructive/20 rounded-xl shadow-2xl p-4 flex flex-col gap-3 z-50">
+                    <div className="text-xs text-muted-foreground flex gap-1.5 items-start">
+                      <AlertTriangle className="size-4 text-destructive shrink-0" />
+                      <span>Are you sure you want to delete these {selectedIds.length} tables? Occupied tables will be skipped.</span>
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <Button size="sm" variant="outline" className="rounded-lg text-xs" onClick={() => setShowDeleteConfirm(false)}>
+                        Cancel
+                      </Button>
+                      <Button size="sm" variant="destructive" className="rounded-lg text-xs" onClick={() => bulkDeleteMutation.mutate(selectedIds)}>
+                        Confirm
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           <button 
@@ -615,14 +637,14 @@ function TablesPage() {
                         className="rounded-xl" 
                         onClick={() => {
                           if (activeOrder) {
-                            navigate({ to: "/orders", search: { editOrderId: activeOrder.id, tableId: undefined, mergeGroupId: undefined } });
+                            navigate({ to: "/orders", search: { editOrderId: activeOrder.id, tableId: undefined, mergeGroupId: undefined, tab: undefined, roomNumber: undefined } });
                           } else {
                             bulkStatusMutation.mutate({ ids: [t.id], status: "Occupied" });
                             toast.success("Order started");
                             if (t.isMerged && t.mergeGroupId) {
-                              navigate({ to: "/orders", search: { mergeGroupId: t.mergeGroupId, tableId: undefined, editOrderId: undefined } });
+                              navigate({ to: "/orders", search: { mergeGroupId: t.mergeGroupId, tableId: undefined, editOrderId: undefined, tab: undefined, roomNumber: undefined } });
                             } else {
-                              navigate({ to: "/orders", search: { tableId: t.id, mergeGroupId: undefined, editOrderId: undefined } });
+                              navigate({ to: "/orders", search: { tableId: t.id, mergeGroupId: undefined, editOrderId: undefined, tab: undefined, roomNumber: undefined } });
                             }
                           }
                         }}

@@ -10,9 +10,11 @@ interface Props {
   onCancel: (b: BookingDto) => void;
   onNoShow: (b: BookingDto) => void;
   onCheckIn: (b: BookingDto) => void;
+  canCheckIn?: boolean;
+  canCancel?: boolean;
 }
 
-export function ReservationsTab({ bookings, onCancel, onNoShow, onCheckIn }: Props) {
+export function ReservationsTab({ bookings, onCancel, onNoShow, onCheckIn, canCheckIn = true, canCancel = true }: Props) {
   const { data: settings } = useQuery({
     queryKey: ["settings"],
     queryFn: () => settingsService.getGeneralSettings(),
@@ -68,15 +70,21 @@ export function ReservationsTab({ bookings, onCancel, onNoShow, onCheckIn }: Pro
                 <td className="px-4 py-3">{currencySymbol}{b.advanceAmount}</td>
                 <td className="px-4 py-3 text-right">
                   <div className="flex items-center justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => onCheckIn(b)} className="text-muted-foreground hover:text-emerald-500" title="Check-in Guest">
-                      <UserCheck className="size-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onCancel(b)} className="text-muted-foreground hover:text-destructive" title="Cancel Booking">
-                      <Ban className="size-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => onNoShow(b)} className="text-muted-foreground hover:text-warning" title="Mark No-Show">
-                      <AlertTriangle className="size-4" />
-                    </Button>
+                    {canCheckIn && (
+                      <Button variant="ghost" size="icon" onClick={() => onCheckIn(b)} className="text-muted-foreground hover:text-emerald-500" title="Check-in Guest">
+                        <UserCheck className="size-4" />
+                      </Button>
+                    )}
+                    {canCancel && (
+                      <>
+                        <Button variant="ghost" size="icon" onClick={() => onCancel(b)} className="text-muted-foreground hover:text-destructive" title="Cancel Booking">
+                          <Ban className="size-4" />
+                        </Button>
+                        <Button variant="ghost" size="icon" onClick={() => onNoShow(b)} className="text-muted-foreground hover:text-warning" title="Mark No-Show">
+                          <AlertTriangle className="size-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </td>
               </tr>

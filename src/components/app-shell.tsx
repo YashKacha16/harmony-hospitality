@@ -1,10 +1,11 @@
-import { Link, useRouterState } from "@tanstack/react-router";
-import { useState, type ReactNode } from "react";
+import { Link, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useState, useEffect, type ReactNode } from "react";
 import {
   LayoutDashboard, BedDouble, CalendarCheck, Sparkles, Utensils, Clock, ClipboardList,
   BookOpen, Receipt, Users, LineChart, Settings, Menu, Search, Bell, Sun, Moon, LogOut,
-  ChevronLeft, X,
+  ChevronLeft, X, ShieldAlert,
 } from "lucide-react";
+import { permissionService, RolePermissions } from "@/lib/permissionService";
 import { useTheme } from "@/lib/theme";
 import { notifications } from "@/lib/mock-data";
 import { Input } from "@/components/ui/input";
@@ -23,21 +24,57 @@ const NAV = [
   { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { to: "/rooms", label: "Rooms", icon: BedDouble },
   { to: "/bookings", label: "Bookings", icon: CalendarCheck },
-  { to: "/housekeeping", label: "Housekeeping", icon: Sparkles },
   { to: "/tables", label: "Tables", icon: Utensils },
   { to: "/waitlist", label: "Waiting List", icon: Clock },
   { to: "/orders", label: "Orders", icon: ClipboardList },
   { to: "/menu", label: "Menu", icon: BookOpen },
   { to: "/billing", label: "Billing", icon: Receipt },
   { to: "/employees", label: "Employees", icon: Users },
-  { to: "/reports", label: "Reports & Revenue", icon: LineChart },
+
   { to: "/settings", label: "Settings", icon: Settings },
 ] as const;
-
 export function AppShell({ children, title, breadcrumbs }: { children: ReactNode; title?: string; breadcrumbs?: { label: string; to?: string }[] }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = useRouterState({ select: (r) => r.location.pathname });
+
+  const { data: roles = [] } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => permissionService.getRoles()
+  });
+
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { name: "Marcus Ellery", role: "Admin", email: "manager@aurelia.co", photoPath: undefined };
+  const currentPath = pathname.split("/")[1] || "dashboard";
+  const permKey = (currentPath === "waitinglist" || currentPath === "waitlist") 
+    ? "waitlist" 
+    : (currentPath === "" ? "dashboard" : currentPath) as any;
+  
+  const hasAccess = (() => {
+    const roleConfig = roles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
+    if (roleConfig) {
+      return !!roleConfig.permissions[permKey as keyof RolePermissions]?.access;
+    }
+    return permissionService.hasPermission(user.role, permKey, "access");
+  })();
+
+  const firstAllowedRoute = NAV.find(item => {
+    const key = item.to.replace("/", "");
+    const pk = key === "waitinglist" || key === "waitlist" ? "waitlist" : (key as any);
+    const roleConfig = roles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
+    if (roleConfig) {
+      return !!roleConfig.permissions[pk as keyof RolePermissions]?.access;
+    }
+    return permissionService.hasPermission(user.role, pk, "access");
+  });
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if ((currentPath === "dashboard" || currentPath === "") && !hasAccess && firstAllowedRoute) {
+      navigate({ to: firstAllowedRoute.to });
+    }
+  }, [currentPath, hasAccess, firstAllowedRoute, navigate]);
 
   const { data: settings } = useQuery({
     queryKey: ["settings"],
@@ -78,7 +115,15 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
         </div>
 
         <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-          {NAV.map((item) => {
+          {NAV.filter(item => {
+            const key = item.to.replace("/", "");
+            const permKey = key === "waitinglist" || key === "waitlist" ? "waitlist" : (key as any);
+            const roleConfig = roles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
+            if (roleConfig) {
+              return !!roleConfig.permissions[permKey as keyof RolePermissions]?.access;
+            }
+            return permissionService.hasPermission(user.role, permKey, "access");
+          }).map((item) => {
             const active = pathname.startsWith(item.to);
             const Icon = item.icon;
             return (
@@ -130,7 +175,15 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
               <button onClick={() => setMobileOpen(false)}><X className="size-5" /></button>
             </div>
             <nav className="space-y-1">
-              {NAV.map((item) => {
+              {NAV.filter(item => {
+                const key = item.to.replace("/", "");
+                const permKey = key === "waitinglist" || key === "waitlist" ? "waitlist" : (key as any);
+                const roleConfig = roles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
+                if (roleConfig) {
+                  return !!roleConfig.permissions[permKey as keyof RolePermissions]?.access;
+                }
+                return permissionService.hasPermission(user.role, permKey, "access");
+              }).map((item) => {
                 const Icon = item.icon;
                 const active = pathname.startsWith(item.to);
                 return (
@@ -164,8 +217,18 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
                 ))}
               </div>
             )}
-            {title && <h1 className="font-serif text-3xl md:text-4xl mb-6">{title}</h1>}
-            {children}
+            {!hasAccess ? (
+              <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6 bg-background rounded-2xl border border-border/40 mt-6 max-w-lg mx-auto shadow-xl">
+                <div className="size-16 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mb-5">
+                  <ShieldAlert className="size-8" />
+                </div>
+                <h2 className="font-serif text-2xl font-bold mb-2">Access Denied</h2>
+                <p className="text-muted-foreground text-sm max-w-sm mb-6">You do not have permission to view the {title || currentPath} module. Please contact your administrator.</p>
+                <Link to="/dashboard" className="text-primary hover:underline font-semibold text-sm">Back to Dashboard</Link>
+              </div>
+            ) : (
+              children
+            )}
           </div>
         </main>
         <MobileBottomNav />
@@ -208,33 +271,7 @@ function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
           <Moon className={cn("absolute size-[18px] transition-all duration-500", theme === "dark" ? "rotate-0 scale-100 text-primary" : "-rotate-90 scale-0 opacity-0")} />
         </button>
 
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="relative h-10 w-10 rounded-xl bg-muted/60 hover:bg-muted flex items-center justify-center">
-              <Bell className="size-[18px]" />
-              <span className="absolute top-2 right-2 size-2 rounded-full bg-destructive animate-pulse" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-80 glass">
-            <DropdownMenuLabel className="font-serif text-base">Notifications</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {notifications.map((n) => (
-              <DropdownMenuItem key={n.id} className="flex-col items-start gap-0.5 py-2.5">
-                <div className="flex items-center gap-2 w-full">
-                  <span className={cn(
-                    "size-2 rounded-full",
-                    n.kind === "success" && "bg-success",
-                    n.kind === "warning" && "bg-warning",
-                    n.kind === "alert" && "bg-destructive",
-                    n.kind === "info" && "bg-info",
-                  )} />
-                  <span className="text-sm flex-1">{n.text}</span>
-                </div>
-                <span className="text-[11px] text-muted-foreground pl-4">{n.time}</span>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+
 
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -276,7 +313,24 @@ function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
 
 function MobileBottomNav() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
-  const items = NAV.slice(0, 5);
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
+  
+  const { data: roles = [] } = useQuery({
+    queryKey: ["roles"],
+    queryFn: () => permissionService.getRoles()
+  });
+
+  const items = NAV.filter(item => {
+    const key = item.to.replace("/", "");
+    const permKey = key === "waitinglist" || key === "waitlist" ? "waitlist" : (key as any);
+    const roleConfig = roles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
+    if (roleConfig) {
+      return !!roleConfig.permissions[permKey as keyof RolePermissions]?.access;
+    }
+    return permissionService.hasPermission(user.role, permKey, "access");
+  }).slice(0, 5);
+
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-30 bg-background/90 backdrop-blur-xl border-t border-border">
       <div className="grid grid-cols-5 h-16">

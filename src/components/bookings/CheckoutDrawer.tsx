@@ -6,6 +6,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Receipt, CheckCircle, Printer } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { printViaIframe } from "@/lib/utils";
 
 interface Props {
   bookingId: number | null;
@@ -88,9 +89,21 @@ export function CheckoutDrawer({ bookingId, open, onOpenChange, mode = "checkout
                 {bill.restaurantOrders && bill.restaurantOrders.length > 0 && (
                   <div className="pl-4 text-xs text-muted-foreground space-y-1 mt-1 border-l-2 border-primary/20">
                     {bill.restaurantOrders.map((o: any) => (
-                      <div key={o.id} className="flex justify-between">
-                        <span>Order {o.orderNumber}</span>
-                        <span>${o.subtotal.toFixed(2)}</span>
+                      <div key={o.id} className="flex flex-col space-y-1">
+                        <div className="flex justify-between">
+                          <span>Order {o.orderNumber}</span>
+                          <span>${o.subtotal.toFixed(2)}</span>
+                        </div>
+                        {o.items && o.items.length > 0 && (
+                          <div className="pl-3 space-y-0.5 border-l border-border/40 mt-1 mb-2">
+                            {o.items.map((item: any, idx: number) => (
+                              <div key={`${o.id}-item-${idx}`} className="flex justify-between text-[11px] text-muted-foreground/80">
+                                <span>{item.name} x {item.quantity}</span>
+                                <span>${(item.priceAtOrder * item.quantity).toFixed(2)}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -131,7 +144,7 @@ export function CheckoutDrawer({ bookingId, open, onOpenChange, mode = "checkout
                 <Button 
                   variant="outline"
                   className={mode === "view" ? "w-full h-12 text-lg rounded-xl" : "w-1/3 h-12 text-lg rounded-xl"}
-                  onClick={() => window.print()}
+                  onClick={() => printViaIframe(`/print-booking/${bookingId}`)}
                 >
                   <Printer className="size-5 mr-2" /> Print
                 </Button>

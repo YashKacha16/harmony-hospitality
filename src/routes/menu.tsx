@@ -2,8 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/app-shell";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { menuService, categoryService, MenuGrouped } from "@/api";
+import { settingsService } from "@/api/services/settingsService";
 import { BASE_URL } from "@/api/apiClient";
 import { MenuItem } from "@/types/models";
+import { extractCurrencySymbol } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -280,6 +282,8 @@ interface MenuItemCardProps {
 }
 
 function MenuItemCard({ item, onEdit, onDelete, onToggle }: MenuItemCardProps) {
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: settingsService.getGeneralSettings });
+  const currency = extractCurrencySymbol(settings?.currency);
   const [localAvailable, setLocalAvailable] = useState(item.available);
 
   // Sync state with props
@@ -319,7 +323,7 @@ function MenuItemCard({ item, onEdit, onDelete, onToggle }: MenuItemCardProps) {
         <div>
           <div className="flex items-start justify-between gap-3">
             <h4 className="font-semibold text-base line-clamp-1">{item.name}</h4>
-            <span className="text-primary font-bold text-base leading-none mt-0.5">${item.price}</span>
+            <span className="text-primary font-bold text-base leading-none mt-0.5">{currency}{item.price}</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[32px]">{item.description}</p>
         </div>
@@ -502,6 +506,8 @@ interface ItemFormModalProps {
 
 function ItemFormModal({ isOpen, mode, categories, initialData, onClose }: ItemFormModalProps) {
   const queryClient = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: settingsService.getGeneralSettings });
+  const currency = extractCurrencySymbol(settings?.currency);
   const [veg, setVeg] = useState(true);
   const [available, setAvailable] = useState(true);
 
@@ -619,7 +625,7 @@ function ItemFormModal({ isOpen, mode, categories, initialData, onClose }: ItemF
             </div>
             <div>
               <Label htmlFor="item-price">Price</Label>
-              <Input id="item-price" name="price" type="number" step="0.01" min="0.01" defaultValue={initialData?.price} className="rounded-xl mt-1.5" placeholder="$0.00" required />
+              <Input id="item-price" name="price" type="number" step="0.01" min="0.01" defaultValue={initialData?.price} className="rounded-xl mt-1.5" placeholder={`${currency}0.00`} required />
             </div>
           </div>
 

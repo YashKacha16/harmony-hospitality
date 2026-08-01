@@ -37,6 +37,11 @@ export const billingService = {
     return response;
   },
   
+  getRoomBills: async (): Promise<any[]> => {
+    const response = await apiClient.get<any[]>("/api/billing/room-bills");
+    return response;
+  },
+
   getBill: async (id: number): Promise<RestaurantBillDto> => {
     const response = await apiClient.get<RestaurantBillDto>(`/api/billing/${id}`);
     return response;

@@ -50,5 +50,13 @@ export const bookingService = {
 
   update: async (id: number, data: Partial<BookingDto>) => {
     return apiClient.put(`/api/Bookings/${id}`, data);
+  },
+
+  getRoomBill: async (id: number) => {
+    return apiClient.get<any>(`/api/Bookings/${id}/bill`);
+  },
+
+  checkout: async (id: number, paymentMethod: string) => {
+    return apiClient.post(`/api/Bookings/${id}/checkout`, { paymentMethod });
   }
 };

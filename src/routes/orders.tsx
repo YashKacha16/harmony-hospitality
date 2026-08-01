@@ -114,13 +114,21 @@ function OrdersPage() {
     ...(kanbanData.served || []),
   ] : [];
 
-  const activeOrder = selectedTableOption && sourceTab === "Dine-in"
-    ? allActiveOrdersForEdit.find(o =>
-      (selectedTableOption.mergeGroupId
-        ? o.mergeGroupId === selectedTableOption.mergeGroupId
-        : o.tableId === selectedTableOption.tableId) && !o.billId
-    )
-    : null;
+  const activeOrder = (() => {
+    if (sourceTab === "Dine-in" && selectedTableOption) {
+      return allActiveOrdersForEdit.find(o =>
+        (selectedTableOption.mergeGroupId
+          ? o.mergeGroupId === selectedTableOption.mergeGroupId
+          : o.tableId === selectedTableOption.tableId) && !o.billId
+      );
+    }
+    if (sourceTab === "Room Service" && roomNumber.trim()) {
+      return allActiveOrdersForEdit.find(o => 
+        o.type === "RoomService" && o.roomNumber === roomNumber.trim() && !o.billId
+      );
+    }
+    return null;
+  })();
 
   useEffect(() => {
     if (activeOrder) {
@@ -1143,6 +1151,13 @@ function OrderCard({
                       </p>
                     );
                   }
+                  if (o.type === "RoomService") {
+                    return (
+                      <p className="text-xs text-blue-500 text-center font-bold uppercase tracking-wider py-2">
+                        Added to Room Bill
+                      </p>
+                    );
+                  }
                   return (
                     <Button
                       size="sm"
@@ -1172,6 +1187,13 @@ function OrderCard({
                 return (
                   <p className="text-xs text-warning text-center font-bold uppercase tracking-wider py-1.5">
                     Bill is generated
+                  </p>
+                );
+              }
+              if (o.type === "RoomService") {
+                return (
+                  <p className="text-xs text-blue-500 text-center font-bold uppercase tracking-wider py-1.5">
+                    Added to Room Bill
                   </p>
                 );
               }

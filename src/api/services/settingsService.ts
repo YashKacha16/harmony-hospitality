@@ -5,6 +5,11 @@ export interface GeneralSettings {
   id?: number;
   name: string;
   logoUrl?: string | null;
+  welcomeImageUrl?: string | null;
+  aboutText?: string | null;
+  chefName?: string | null;
+  chefDescription?: string | null;
+  chefImageUrl?: string | null;
   address: string;
   phone: string;
   email: string;
@@ -37,6 +42,28 @@ export const settingsService = {
     // Use standard fetch since apiClient overrides body to JSON unless it's FormData, but apiClient.post doesn't support FormData directly because it does JSON.stringify(body).
     // Wait, let's just use fetch directly.
     const res = await fetch('http://localhost:5157/api/Settings/logo', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadWelcomeImage: async (file: File): Promise<{ welcomeImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('http://localhost:5157/api/Settings/welcome-image', {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadChefImage: async (file: File): Promise<{ chefImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch('http://localhost:5157/api/Settings/chef-image', {
       method: 'POST',
       body: formData,
     });

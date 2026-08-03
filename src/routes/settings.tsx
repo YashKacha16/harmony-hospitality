@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useTheme } from "@/lib/theme";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingsService, GeneralSettings } from "@/api/services/settingsService";
+import { chefService, Chef } from "@/api/services/chefService";
 import { BASE_URL } from "@/api/apiClient";
 
 export const Route = createFileRoute("/settings")({
@@ -28,6 +29,8 @@ function SettingsPage() {
   const { theme, setTheme } = useTheme();
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const welcomeImageRef = useRef<HTMLInputElement>(null);
+  const chefImageRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["settings"],
@@ -49,6 +52,18 @@ function SettingsPage() {
   // Dialog State
   const [isAddRoleOpen, setIsAddRoleOpen] = useState(false);
   const [newRoleName, setNewRoleName] = useState("");
+
+  // Chefs state
+  const { data: chefs = [], refetch: refetchChefs } = useQuery({
+    queryKey: ["chefs"],
+    queryFn: () => chefService.getChefs()
+  });
+  const [isChefModalOpen, setIsChefModalOpen] = useState(false);
+  const [selectedChef, setSelectedChef] = useState<Chef | null>(null);
+  const [chefFormName, setChefFormName] = useState("");
+  const [chefFormRole, setChefFormRole] = useState("");
+  const [chefFormDescription, setChefFormDescription] = useState("");
+  const [chefFormImageUrl, setChefFormImageUrl] = useState("");
 
   // Sync editing permissions when selected role changes
   useEffect(() => {
@@ -86,6 +101,58 @@ function SettingsPage() {
     },
   });
 
+  const uploadWelcomeImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadWelcomeImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, welcomeImageUrl: data.welcomeImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Welcome image uploaded successfully");
+    },
+    onError: () => {
+      toast.error("Failed to upload welcome image");
+    },
+  });
+
+  const createChefMutation = useMutation({
+    mutationFn: (data: Chef) => chefService.createChef(data),
+    onSuccess: () => {
+      refetchChefs();
+      setIsChefModalOpen(false);
+      toast.success("Chef added successfully");
+    },
+    onError: () => toast.error("Failed to add chef"),
+  });
+
+  const updateChefMutation = useMutation({
+    mutationFn: ({ id, data }: { id: number; data: Chef }) => chefService.updateChef(id, data),
+    onSuccess: () => {
+      refetchChefs();
+      setIsChefModalOpen(false);
+      toast.success("Chef updated successfully");
+    },
+    onError: () => toast.error("Failed to update chef"),
+  });
+
+  const deleteChefMutation = useMutation({
+    mutationFn: (id: number) => chefService.deleteChef(id),
+    onSuccess: () => {
+      refetchChefs();
+      toast.success("Chef deleted successfully");
+    },
+    onError: () => toast.error("Failed to delete chef"),
+  });
+
+  const chefPhotoUploadMutation = useMutation({
+    mutationFn: (file: File) => chefService.uploadImage(file),
+    onSuccess: (data) => {
+      setChefFormImageUrl(data.imageUrl);
+      toast.success("Chef photo uploaded successfully");
+    },
+    onError: () => {
+      toast.error("Failed to upload chef photo");
+    },
+  });
+
   const handleSave = () => {
     if (!form.name || !form.address || !form.email || !form.phone) {
       toast.error("Please fill in all required fields (Name, Address, Email, Phone)");
@@ -97,6 +164,18 @@ function SettingsPage() {
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       uploadLogoMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleWelcomeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadWelcomeImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleChefFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      chefPhotoUploadMutation.mutate(e.target.files[0]);
     }
   };
 
@@ -148,11 +227,37 @@ function SettingsPage() {
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                 </div>
                 <div>
+                  <Label>Welcome Section Background Image</Label>
+                  <div 
+                    className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
+                    onClick={() => welcomeImageRef.current?.click()}
+                  >
+                    {form.welcomeImageUrl ? (
+                      <img src={`${BASE_URL}${form.welcomeImageUrl}`} alt="Welcome Image" className="h-full object-cover w-full" />
+                    ) : (
+                      <>
+                        <Upload className="size-4" /> 
+                        {uploadWelcomeImageMutation.isPending ? "Uploading..." : "Upload Welcome Image"}
+                      </>
+                    )}
+                  </div>
+                  <input type="file" ref={welcomeImageRef} className="hidden" accept="image/*" onChange={handleWelcomeFileChange} />
+                </div>
+                <div>
                   <Label>Address</Label>
                   <Textarea 
                     value={form.address || ""} 
                     onChange={e => setForm(f => ({...f, address: e.target.value}))}
                     className="rounded-xl mt-1" 
+                  />
+                </div>
+                <div>
+                  <Label>About us description (Multiline support)</Label>
+                  <Textarea 
+                    value={form.aboutText || ""} 
+                    onChange={e => setForm(f => ({...f, aboutText: e.target.value}))}
+                    className="rounded-xl mt-1 min-h-[120px]" 
+                    placeholder="Enter details of your hotel, history, and experience..."
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
@@ -172,6 +277,84 @@ function SettingsPage() {
                       className="rounded-xl mt-1" 
                     />
                   </div>
+                </div>
+
+                <div className="border-t border-border pt-6 mt-4 space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-serif text-lg text-gold">Chef Team Directory</h3>
+                      <p className="text-xs text-muted-foreground">Manage the chefs shown on the About page of your hotel.</p>
+                    </div>
+                    <Button 
+                      type="button"
+                      onClick={() => {
+                        setSelectedChef(null);
+                        setChefFormName("");
+                        setChefFormRole("");
+                        setChefFormDescription("");
+                        setChefFormImageUrl("");
+                        setIsChefModalOpen(true);
+                      }} 
+                      size="sm" 
+                      className="rounded-xl flex items-center gap-1 bg-gold text-gold-foreground hover:bg-gold/90"
+                    >
+                      <Plus className="size-4" /> Add Chef
+                    </Button>
+                  </div>
+
+                  {chefs.length === 0 ? (
+                    <div className="border border-dashed rounded-xl p-8 text-center text-sm text-muted-foreground">
+                      No chefs added yet. Click "Add Chef" to build your culinary team.
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {chefs.map((c: Chef) => (
+                        <div key={c.id} className="flex gap-3 p-3 border rounded-xl items-start relative bg-card text-card-foreground">
+                          {c.imageUrl ? (
+                            <img src={`${BASE_URL}${c.imageUrl}`} alt={c.name} className="size-16 rounded-lg object-cover" />
+                          ) : (
+                            <div className="size-16 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No Photo</div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium truncate text-sm">{c.name}</div>
+                            {c.role && <div className="text-xs text-gold font-medium truncate">{c.role}</div>}
+                            {c.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{c.description}</p>}
+                          </div>
+                          <div className="flex gap-1 shrink-0 ml-2">
+                            <Button 
+                              type="button"
+                              onClick={() => {
+                                setSelectedChef(c);
+                                setChefFormName(c.name);
+                                setChefFormRole(c.role || "");
+                                setChefFormDescription(c.description || "");
+                                setChefFormImageUrl(c.imageUrl || "");
+                                setIsChefModalOpen(true);
+                              }} 
+                              variant="ghost" 
+                              size="sm" 
+                              className="h-7 text-xs px-2 text-muted-foreground hover:text-foreground"
+                            >
+                              Edit
+                            </Button>
+                            <Button 
+                              type="button"
+                              onClick={() => {
+                                if (confirm(`Are you sure you want to delete Chef ${c.name}?`)) {
+                                  deleteChefMutation.mutate(c.id!);
+                                }
+                              }} 
+                              variant="ghost" 
+                              size="icon" 
+                              className="size-7 rounded-lg text-destructive hover:text-destructive/90"
+                            >
+                              <Trash2 className="size-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </>
             )}
@@ -578,6 +761,91 @@ function SettingsPage() {
               }}
             >
               Create Role
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Chef Modal */}
+      <Dialog open={isChefModalOpen} onOpenChange={setIsChefModalOpen}>
+        <DialogContent className="max-w-md rounded-2xl p-6">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">
+              {selectedChef ? "Edit Chef Profile" : "Add Chef"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 my-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="chefName">Chef Name</Label>
+              <Input
+                id="chefName"
+                placeholder="e.g. Aditi Rao"
+                value={chefFormName}
+                onChange={e => setChefFormName(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="chefRole">Role / Title</Label>
+              <Input
+                id="chefRole"
+                placeholder="e.g. Executive Chef, Sous Chef"
+                value={chefFormRole}
+                onChange={e => setChefFormRole(e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="chefPhoto">Chef Photo</Label>
+              <div 
+                className="mt-1 h-28 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-1 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
+                onClick={() => chefImageRef.current?.click()}
+              >
+                {chefFormImageUrl ? (
+                  <img src={`${BASE_URL}${chefFormImageUrl}`} alt="Chef Photo" className="h-full object-cover w-full" />
+                ) : (
+                  <>
+                    <Upload className="size-4" /> 
+                    {chefPhotoUploadMutation.isPending ? "Uploading..." : "Upload Chef Photo"}
+                  </>
+                )}
+              </div>
+              <input type="file" ref={chefImageRef} className="hidden" accept="image/*" onChange={handleChefFileChange} />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="chefDescription">Bio / Description</Label>
+              <Textarea
+                id="chefDescription"
+                placeholder="Chef details..."
+                value={chefFormDescription}
+                onChange={e => setChefFormDescription(e.target.value)}
+                className="rounded-xl min-h-[100px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" className="rounded-xl" onClick={() => setIsChefModalOpen(false)}>Cancel</Button>
+            <Button
+              className="rounded-xl bg-gold text-gold-foreground hover:bg-gold/90"
+              onClick={() => {
+                if (!chefFormName.trim()) {
+                  return toast.error("Chef name cannot be empty.");
+                }
+                const data: Chef = {
+                  name: chefFormName,
+                  role: chefFormRole || null,
+                  description: chefFormDescription || null,
+                  imageUrl: chefFormImageUrl || null,
+                };
+                if (selectedChef) {
+                  updateChefMutation.mutate({ id: selectedChef.id!, data: { ...selectedChef, ...data } });
+                } else {
+                  createChefMutation.mutate(data);
+                }
+              }}
+              disabled={createChefMutation.isPending || updateChefMutation.isPending}
+            >
+              {selectedChef ? "Update Profile" : "Add Chef"}
             </Button>
           </DialogFooter>
         </DialogContent>

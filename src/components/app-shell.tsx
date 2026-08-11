@@ -47,10 +47,10 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
   const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
   const user = userRaw ? JSON.parse(userRaw) : { name: "Marcus Ellery", role: "Admin", email: "manager@aurelia.co", photoPath: undefined };
   const currentPath = pathname.split("/")[1] || "dashboard";
-  const permKey = (currentPath === "waitinglist" || currentPath === "waitlist") 
-    ? "waitlist" 
+  const permKey = (currentPath === "waitinglist" || currentPath === "waitlist")
+    ? "waitlist"
     : (currentPath === "" ? "dashboard" : currentPath) as any;
-  
+
   const hasAccess = (() => {
     const roleConfig = roles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
     if (roleConfig) {
@@ -95,9 +95,9 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
         <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border overflow-hidden shrink-0">
           <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-[0_0_20px_-4px_var(--sidebar-primary)] shrink-0">
             {settings?.logoUrl ? (
-                <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+              <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
             ) : (
-                <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
+              <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
             )}
           </div>
           {!collapsed && (
@@ -166,9 +166,9 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
               <div className="flex items-center gap-3 overflow-hidden">
                 <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
                   {settings?.logoUrl ? (
-                      <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+                    <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
                   ) : (
-                      <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
+                    <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
                   )}
                 </div>
                 <div className="font-serif text-lg truncate">{settings?.name || "Aurelia"}</div>
@@ -246,7 +246,7 @@ function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
   const getPhotoUrl = (path?: string) => {
     if (!path) return undefined;
     if (path.startsWith("http")) return path;
-    return `http://localhost:5157${path}`;
+    return `https://hotel-backend.runasp.net${path}`;
   };
 
   const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
@@ -316,7 +316,7 @@ function MobileBottomNav() {
   const pathname = useRouterState({ select: (r) => r.location.pathname });
   const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
   const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
-  
+
   const { data: roles = [] } = useQuery({
     queryKey: ["roles"],
     queryFn: () => permissionService.getRoles()

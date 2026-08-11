@@ -1,4 +1,4 @@
-export const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5157';
+export const BASE_URL = import.meta.env.VITE_API_URL || 'https://hotel-backend.runasp.net';
 
 export const apiClient = {
     async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {

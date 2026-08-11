@@ -24,7 +24,7 @@ export const Route = createFileRoute("/employees")({
 const getPhotoUrl = (path?: string) => {
   if (!path) return undefined;
   if (path.startsWith('http')) return path;
-  return `http://localhost:5157${path}`;
+  return `https://hotel-backend.runasp.net${path}`;
 };
 
 function EmpPage() {
@@ -65,29 +65,29 @@ function EmpPage() {
       <div className="flex justify-end mb-4"><AddEmpSheet roles={roleNames} /></div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
-          {employees.map(e => (
-            <Card key={e.id} className="p-5 rounded-2xl">
-              <div className="flex items-center gap-3">
-                <Avatar className="size-14"><AvatarImage src={getPhotoUrl(e.photoPath)} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{e.name}</div>
-                  <div className="text-xs text-muted-foreground">{e.role}</div>
-                </div>
-                <StatusBadge status={e.status} />
+        {employees.map(e => (
+          <Card key={e.id} className="p-5 rounded-2xl">
+            <div className="flex items-center gap-3">
+              <Avatar className="size-14"><AvatarImage src={getPhotoUrl(e.photoPath)} /><AvatarFallback>{e.name[0]}</AvatarFallback></Avatar>
+              <div className="flex-1 min-w-0">
+                <div className="font-medium truncate">{e.name}</div>
+                <div className="text-xs text-muted-foreground">{e.role}</div>
               </div>
-              <div className="mt-3 space-y-1 text-xs text-muted-foreground">
-                <div className="flex items-center gap-1.5"><Phone className="size-3" /> {e.email}</div>
-                <div>Joined: <span className="text-foreground">{e.joined}</span></div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <Select defaultValue={e.role} onValueChange={(val: string) => updateMutation.mutate({ id: e.id!, employee: { ...e, role: val } })}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs flex-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{roleNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                </Select>
-                <EditEmpSheet employee={e} roles={roleNames} />
-              </div>
-            </Card>
-          ))}
+              <StatusBadge status={e.status} />
+            </div>
+            <div className="mt-3 space-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-1.5"><Phone className="size-3" /> {e.email}</div>
+              <div>Joined: <span className="text-foreground">{e.joined}</span></div>
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Select defaultValue={e.role} onValueChange={(val: string) => updateMutation.mutate({ id: e.id!, employee: { ...e, role: val } })}>
+                <SelectTrigger className="h-8 rounded-lg text-xs flex-1"><SelectValue /></SelectTrigger>
+                <SelectContent>{roleNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+              </Select>
+              <EditEmpSheet employee={e} roles={roleNames} />
+            </div>
+          </Card>
+        ))}
       </div>
     </AppShell>
   );
@@ -119,7 +119,7 @@ function AddEmpSheet({ roles }: { roles: string[] }) {
         <form className="mt-6 space-y-3 px-4" autoComplete="off" onSubmit={async (e) => {
           e.preventDefault();
           const formData = new FormData(e.currentTarget);
-          
+
           const newEmp = {
             name: formData.get("name"),
             email: formData.get("email"),
@@ -131,12 +131,12 @@ function AddEmpSheet({ roles }: { roles: string[] }) {
 
           try {
             const created = await createMutation.mutateAsync(newEmp);
-            
+
             const fileInput = formData.get("photo") as File;
             if (fileInput && fileInput.size > 0 && created.id) {
               await photoMutation.mutateAsync({ id: created.id, file: fileInput });
             }
-            
+
             queryClient.invalidateQueries({ queryKey: ["employees"] });
             toast.success("Employee added successfully");
             setOpen(false);
@@ -154,7 +154,7 @@ function AddEmpSheet({ roles }: { roles: string[] }) {
             <div><Label>Password</Label><Input name="password" type="password" className="rounded-xl mt-1" required autoComplete="new-password" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-             <div><Label>Role</Label>
+            <div><Label>Role</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder={roles[0] || "Waiter"} /></SelectTrigger>
                 <SelectContent>{roles.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
@@ -195,8 +195,8 @@ function EditEmpSheet({ employee, roles }: { employee: any; roles: string[] }) {
       <SheetTrigger asChild><Button variant="outline" size="sm" className="h-8 rounded-lg text-xs">Edit</Button></SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader><SheetTitle className="font-serif text-2xl">Edit employee</SheetTitle></SheetHeader>
-        <form className="mt-6 space-y-3 px-4" onSubmit={(e) => { 
-          e.preventDefault(); 
+        <form className="mt-6 space-y-3 px-4" onSubmit={(e) => {
+          e.preventDefault();
           const formData = new FormData(e.currentTarget);
 
           const fileInput = formData.get("photo") as File;

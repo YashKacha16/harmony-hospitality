@@ -33,7 +33,7 @@ export const chefService = {
   uploadImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('http://hotel-backend.runasp.net/api/Chefs/upload-image', {
+    const res = await fetch('https://hotel-backend.runasp.net/api/Chefs/upload-image', {
       method: 'POST',
       body: formData,
     });

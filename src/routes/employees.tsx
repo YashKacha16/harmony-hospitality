@@ -24,7 +24,7 @@ export const Route = createFileRoute("/employees")({
 const getPhotoUrl = (path?: string) => {
   if (!path) return undefined;
   if (path.startsWith('http')) return path;
-  return `http://hotel-backend.runasp.net${path}`;
+  return `https://hotel-backend.runasp.net${path}`;
 };
 
 function EmpPage() {

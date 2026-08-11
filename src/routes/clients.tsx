@@ -26,7 +26,7 @@ function ClientsPage() {
   const { data = { items: [], totalItems: 0, totalPages: 1 }, isLoading } = useQuery({
     queryKey: ["clients", search, page],
     queryFn: async () => {
-      const res = await fetch(`https://hotel-backend.runasp.net/api/Clients?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`);
+      const res = await fetch(`http://hotel-backend.runasp.net/api/Clients?search=${encodeURIComponent(search)}&page=${page}&pageSize=${pageSize}`);
       if (!res.ok) throw new Error("Failed to load clients");
       return res.json();
     },
@@ -37,7 +37,7 @@ function ClientsPage() {
   const { data: stats = { totalClients: 0, activeGuests: 0, totalRevenue: 0 } } = useQuery({
     queryKey: ["client-stats"],
     queryFn: async () => {
-      const res = await fetch("https://hotel-backend.runasp.net/api/Clients/stats");
+      const res = await fetch("http://hotel-backend.runasp.net/api/Clients/stats");
       if (!res.ok) throw new Error("Failed to load stats");
       return res.json();
     }
@@ -45,7 +45,7 @@ function ClientsPage() {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`https://hotel-backend.runasp.net/api/Clients/${id}`, { method: "DELETE" });
+      const res = await fetch(`http://hotel-backend.runasp.net/api/Clients/${id}`, { method: "DELETE" });
       if (!res.ok) throw new Error("Failed to delete client");
       return true;
     },
@@ -221,7 +221,7 @@ function AddClientSheet() {
 
   const createMutation = useMutation({
     mutationFn: async (client: any) => {
-      const res = await fetch("https://hotel-backend.runasp.net/api/Auth/client/register", {
+      const res = await fetch("http://hotel-backend.runasp.net/api/Auth/client/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(client)
@@ -298,7 +298,7 @@ function EditClientSheet({ client }: { client: any }) {
 
   const updateMutation = useMutation({
     mutationFn: async (updated: any) => {
-      const res = await fetch(`https://hotel-backend.runasp.net/api/Clients/${client.id}`, {
+      const res = await fetch(`http://hotel-backend.runasp.net/api/Clients/${client.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updated)

@@ -41,7 +41,7 @@ export const settingsService = {
     formData.append('logo', file);
     // Use standard fetch since apiClient overrides body to JSON unless it's FormData, but apiClient.post doesn't support FormData directly because it does JSON.stringify(body).
     // Wait, let's just use fetch directly.
-    const res = await fetch('https://hotel-backend.runasp.net/api/Settings/logo', {
+    const res = await fetch('http://hotel-backend.runasp.net/api/Settings/logo', {
       method: 'POST',
       body: formData,
     });
@@ -52,7 +52,7 @@ export const settingsService = {
   uploadWelcomeImage: async (file: File): Promise<{ welcomeImageUrl: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('https://hotel-backend.runasp.net/api/Settings/welcome-image', {
+    const res = await fetch('http://hotel-backend.runasp.net/api/Settings/welcome-image', {
       method: 'POST',
       body: formData,
     });
@@ -63,7 +63,7 @@ export const settingsService = {
   uploadChefImage: async (file: File): Promise<{ chefImageUrl: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('https://hotel-backend.runasp.net/api/Settings/chef-image', {
+    const res = await fetch('http://hotel-backend.runasp.net/api/Settings/chef-image', {
       method: 'POST',
       body: formData,
     });

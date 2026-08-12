@@ -244,9 +244,7 @@ function TopNav({ onOpenMobile }: { onOpenMobile: () => void }) {
   const { theme, toggle } = useTheme();
 
   const getPhotoUrl = (path?: string) => {
-    if (!path) return undefined;
-    if (path.startsWith("http")) return path;
-    return `https://hotel-backend.runasp.net${path}`;
+    return getImageUrl(path);
   };
 
   const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;

@@ -717,6 +717,9 @@ function ItemFormModal({ isOpen, mode, categories, initialData, onClose }: ItemF
 // Helper to remove host domain when filling URL input in edit mode
 function itemImageOnlyPath(url?: string) {
   if (!url) return "";
+  if (url.startsWith(BASE_URL)) {
+    return url.replace(BASE_URL, "");
+  }
   if (url.startsWith("https://hotel-backend.runasp.net")) {
     return url.replace("https://hotel-backend.runasp.net", "");
   }

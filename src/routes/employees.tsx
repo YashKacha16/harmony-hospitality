@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Plus, Upload, Phone, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { permissionService } from "@/lib/permissionService";
 
@@ -22,9 +22,7 @@ export const Route = createFileRoute("/employees")({
 });
 
 const getPhotoUrl = (path?: string) => {
-  if (!path) return undefined;
-  if (path.startsWith('http')) return path;
-  return `https://hotel-backend.runasp.net${path}`;
+  return getImageUrl(path);
 };
 
 function EmpPage() {

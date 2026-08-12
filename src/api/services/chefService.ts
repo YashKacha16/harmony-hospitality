@@ -1,4 +1,4 @@
-import { apiClient } from '../apiClient';
+import { apiClient, BASE_URL } from '../apiClient';
 
 export interface Chef {
   id?: number;
@@ -33,7 +33,7 @@ export const chefService = {
   uploadImage: async (file: File): Promise<{ imageUrl: string }> => {
     const formData = new FormData();
     formData.append('file', file);
-    const res = await fetch('https://hotel-backend.runasp.net/api/Chefs/upload-image', {
+    const res = await fetch(`${BASE_URL}/api/Chefs/upload-image`, {
       method: 'POST',
       body: formData,
     });

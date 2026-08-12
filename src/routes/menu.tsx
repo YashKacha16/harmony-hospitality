@@ -13,27 +13,27 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { 
-  Plus, Pencil, Trash2, GripVertical, Leaf, Drumstick, UtensilsCrossed, Edit 
+import {
+  Plus, Pencil, Trash2, GripVertical, Leaf, Drumstick, UtensilsCrossed, Edit
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { useState, useEffect } from "react";
-import { 
-  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors 
+import {
+  DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors
 } from "@dnd-kit/core";
-import { 
-  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable 
+import {
+  arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { permissionService, RoleConfig } from "@/lib/permissionService";
 
 export const Route = createFileRoute("/menu")({
-  head: () => ({ 
+  head: () => ({
     meta: [
-      { title: "Menu — Aurelia" }, 
+      { title: "Menu — Aurelia" },
       { name: "description", content: "Curate the culinary offering: categories, seasonal items, images and availability." }
-    ] 
+    ]
   }),
   component: MenuPage,
 });
@@ -157,11 +157,11 @@ function MenuPage() {
   return (
     <AppShell title="Menu" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Menu" }]}>
       <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
-        <CategoryTabs 
-          data={menuData} 
-          activeCategoryId={activeCategoryId || menuData[0].categoryId} 
-          onSelect={setActiveCategoryId} 
-          onAddClick={() => setIsAddCatOpen(true)} 
+        <CategoryTabs
+          data={menuData}
+          activeCategoryId={activeCategoryId || menuData[0].categoryId}
+          onSelect={setActiveCategoryId}
+          onAddClick={() => setIsAddCatOpen(true)}
           onReorderClick={() => setIsReorderCatOpen(true)}
           onDeleteCategory={(id) => {
             if (confirm("Are you sure you want to delete this category?")) {
@@ -173,8 +173,8 @@ function MenuPage() {
           canDelete={canDelete}
         />
         {canAdd && (
-          <Button 
-            onClick={() => setItemModal({ isOpen: true, mode: "create", initialData: null })} 
+          <Button
+            onClick={() => setItemModal({ isOpen: true, mode: "create", initialData: null })}
             className="rounded-xl bg-primary text-primary-foreground copper-glow ml-auto"
           >
             <Plus className="size-4 mr-1" /> Add item
@@ -183,8 +183,8 @@ function MenuPage() {
       </div>
 
       {activeCategory && (
-        <MenuGrid 
-          items={activeCategory.items} 
+        <MenuGrid
+          items={activeCategory.items}
           onEdit={(item) => setItemModal({ isOpen: true, mode: "edit", initialData: item })}
           onDelete={(id) => {
             if (confirm("Are you sure you want to delete this item?")) {
@@ -198,26 +198,26 @@ function MenuPage() {
       )}
 
       {canAdd && (
-        <AddCategoryModal 
-          isOpen={isAddCatOpen} 
-          onClose={() => setIsAddCatOpen(false)} 
+        <AddCategoryModal
+          isOpen={isAddCatOpen}
+          onClose={() => setIsAddCatOpen(false)}
         />
       )}
 
       {canEdit && (
-        <ReorderCategoriesModal 
-          isOpen={isReorderCatOpen} 
-          categories={menuData} 
-          onClose={() => setIsReorderCatOpen(false)} 
+        <ReorderCategoriesModal
+          isOpen={isReorderCatOpen}
+          categories={menuData}
+          onClose={() => setIsReorderCatOpen(false)}
         />
       )}
 
-      <ItemFormModal 
-        isOpen={itemModal.isOpen} 
-        mode={itemModal.mode} 
-        categories={menuData} 
-        initialData={itemModal.initialData} 
-        onClose={() => setItemModal({ isOpen: false, mode: "create", initialData: null })} 
+      <ItemFormModal
+        isOpen={itemModal.isOpen}
+        mode={itemModal.mode}
+        categories={menuData}
+        initialData={itemModal.initialData}
+        onClose={() => setItemModal({ isOpen: false, mode: "create", initialData: null })}
       />
     </AppShell>
   );
@@ -248,15 +248,15 @@ function CategoryTabs({ data, activeCategoryId, onSelect, onAddClick, onReorderC
                 onClick={() => onSelect(c.categoryId)}
                 className={cn(
                   "px-4 py-2 text-sm font-medium rounded-lg transition-all cursor-pointer",
-                  isActive 
-                    ? "bg-primary text-primary-foreground border border-primary/20 shadow-md shadow-primary/20" 
+                  isActive
+                    ? "bg-primary text-primary-foreground border border-primary/20 shadow-md shadow-primary/20"
                     : "text-muted-foreground hover:text-foreground hover:bg-muted"
                 )}
               >
                 {c.categoryName}
               </button>
               {canDelete && (
-                <button 
+                <button
                   onClick={(e) => { e.stopPropagation(); onDeleteCategory(c.categoryId); }}
                   className="opacity-0 group-hover:opacity-100 hover:text-destructive absolute -top-1 -right-1 bg-background size-5 rounded-full border border-border shadow flex items-center justify-center transition-all cursor-pointer text-[10px]"
                   title="Delete category"
@@ -268,7 +268,7 @@ function CategoryTabs({ data, activeCategoryId, onSelect, onAddClick, onReorderC
           );
         })}
         {canAdd && (
-          <button 
+          <button
             onClick={onAddClick}
             className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition border border-dashed border-white/10"
             title="Add Category"
@@ -309,12 +309,12 @@ function MenuGrid({ items, onEdit, onDelete, onToggle, canEdit = true, canDelete
   return (
     <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
       {items.map((item) => (
-        <MenuItemCard 
-          key={item.id} 
-          item={item} 
-          onEdit={onEdit} 
-          onDelete={onDelete} 
-          onToggle={onToggle} 
+        <MenuItemCard
+          key={item.id}
+          item={item}
+          onEdit={onEdit}
+          onDelete={onDelete}
+          onToggle={onToggle}
           canEdit={canEdit}
           canDelete={canDelete}
         />
@@ -539,11 +539,11 @@ function SortableCategoryItem({ id, name }: { id: number; name: string }) {
     opacity: isDragging ? 0.6 : 1,
   };
   return (
-    <div 
-      ref={setNodeRef} 
-      style={style} 
-      {...attributes} 
-      {...listeners} 
+    <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       className="p-3 bg-muted/60 hover:bg-muted border border-white/5 rounded-xl flex items-center justify-between cursor-grab active:cursor-grabbing text-sm font-medium transition"
     >
       <span>{name}</span>
@@ -608,7 +608,7 @@ function ItemFormModal({ isOpen, mode, categories, initialData, onClose }: ItemF
           e.preventDefault();
           const formData = new FormData(e.currentTarget);
           const fileInput = formData.get("imageFile") as File;
-          
+
           const price = parseFloat(formData.get("price") as string);
           if (isNaN(price) || price <= 0) {
             toast.error("Price must be greater than 0");
@@ -668,10 +668,10 @@ function ItemFormModal({ isOpen, mode, categories, initialData, onClose }: ItemF
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label htmlFor="item-category">Category</Label>
-              <select 
-                id="item-category" 
-                name="categoryId" 
-                defaultValue={initialData?.categoryId || categories[0]?.categoryId} 
+              <select
+                id="item-category"
+                name="categoryId"
+                defaultValue={initialData?.categoryId || categories[0]?.categoryId}
                 className="w-full border border-white/10 rounded-xl h-10 px-3 mt-1.5 bg-background text-sm text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                 required
               >
@@ -722,8 +722,8 @@ function ItemFormModal({ isOpen, mode, categories, initialData, onClose }: ItemF
 // Helper to remove host domain when filling URL input in edit mode
 function itemImageOnlyPath(url?: string) {
   if (!url) return "";
-  if (url.startsWith("http://localhost:5157")) {
-    return url.replace("http://localhost:5157", "");
+  if (url.startsWith("https://hotel-backend.runasp.net")) {
+    return url.replace("https://hotel-backend.runasp.net", "");
   }
   return url;
 }

@@ -1,5 +1,6 @@
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { BASE_URL } from "@/api/apiClient";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -24,4 +25,14 @@ export function printViaIframe(url: string) {
       document.body.removeChild(iframe);
     }, 5000);
   };
+}
+
+export function getImageUrl(path: string | null | undefined): string {
+  if (!path) return '';
+  if (path.startsWith('http')) return path;
+  
+  const baseUrl = BASE_URL.replace(/\/$/, '');
+  const imagePath = path.startsWith('/') ? path : `/${path}`;
+  
+  return `${baseUrl}${imagePath}`;
 }

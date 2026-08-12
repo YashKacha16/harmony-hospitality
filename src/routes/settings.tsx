@@ -19,6 +19,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingsService, GeneralSettings } from "@/api/services/settingsService";
 import { chefService, Chef } from "@/api/services/chefService";
 import { BASE_URL } from "@/api/apiClient";
+import { getImageUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({
   head: () => ({ meta: [{ title: "Settings — Aurelia" }, { name: "description", content: "Property configuration: branding, taxes, cancellation tiers, notifications and theme." }] }),
@@ -216,7 +217,7 @@ function SettingsPage() {
                     onClick={() => fileInputRef.current?.click()}
                   >
                     {form.logoUrl ? (
-                      <img src={`${BASE_URL}${form.logoUrl}`} alt="Logo" className="h-full object-contain" />
+                      <img src={getImageUrl(form.logoUrl)} alt="Logo" className="h-full object-contain" />
                     ) : (
                       <>
                         <Upload className="size-4" /> 
@@ -233,7 +234,7 @@ function SettingsPage() {
                     onClick={() => welcomeImageRef.current?.click()}
                   >
                     {form.welcomeImageUrl ? (
-                      <img src={`${BASE_URL}${form.welcomeImageUrl}`} alt="Welcome Image" className="h-full object-cover w-full" />
+                      <img src={getImageUrl(form.welcomeImageUrl)} alt="Welcome Image" className="h-full object-cover w-full" />
                     ) : (
                       <>
                         <Upload className="size-4" /> 
@@ -311,7 +312,7 @@ function SettingsPage() {
                       {chefs.map((c: Chef) => (
                         <div key={c.id} className="flex gap-3 p-3 border rounded-xl items-start relative bg-card text-card-foreground">
                           {c.imageUrl ? (
-                            <img src={`${BASE_URL}${c.imageUrl}`} alt={c.name} className="size-16 rounded-lg object-cover" />
+                            <img src={getImageUrl(c.imageUrl)} alt={c.name} className="size-16 rounded-lg object-cover" />
                           ) : (
                             <div className="size-16 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No Photo</div>
                           )}
@@ -841,7 +842,7 @@ function SettingsPage() {
                 onClick={() => chefImageRef.current?.click()}
               >
                 {chefFormImageUrl ? (
-                  <img src={`${BASE_URL}${chefFormImageUrl}`} alt="Chef Photo" className="h-full object-cover w-full" />
+                  <img src={getImageUrl(chefFormImageUrl)} alt="Chef Photo" className="h-full object-cover w-full" />
                 ) : (
                   <>
                     <Upload className="size-4" /> 

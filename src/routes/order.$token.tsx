@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Minus, ChefHat, Clock, ShoppingBag, CheckCircle, AlertTriangle, ShieldCheck } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { orderService } from "@/api/services/orderService";
 import { menuService } from "@/api/services/menuService";
@@ -235,11 +235,13 @@ function CustomerOrderingPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             {settings?.logoUrl && (
-              <img 
-                src={settings.logoUrl.startsWith("http") ? settings.logoUrl : `${BASE_URL}${settings.logoUrl}`} 
-                alt="Logo" 
-                className="h-6 object-contain" 
-              />
+              <div className="size-10 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-sm overflow-hidden copper-glow">
+                <img 
+                  src={getImageUrl(settings.logoUrl)} 
+                  alt="Logo" 
+                  className="w-full h-full object-cover" 
+                />
+              </div>
             )}
             <h1 className="font-serif text-2xl font-bold text-foreground">{settings?.name || "Aurelia"}</h1>
           </div>
@@ -281,7 +283,7 @@ function CustomerOrderingPage() {
                       {item.image ? (
                         <div className="size-16 rounded-xl overflow-hidden relative flex-shrink-0">
                           <img 
-                            src={item.image.startsWith("http") ? item.image : `${BASE_URL}${item.image}`} 
+                            src={getImageUrl(item.image)} 
                             alt={item.name} 
                             className="w-full h-full object-cover"
                           />

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Plus, Minus, Flag, ChefHat, Clock, Send, X, Trash2, Edit2, AlertCircle } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { billingService } from "@/api/services/billingService";
 import { orderService } from "@/api/services/orderService";
@@ -532,7 +532,7 @@ function OrdersPage() {
                         {item.image && (
                           <div className="h-28 overflow-hidden relative">
                             <img
-                              src={item.image.startsWith("http") ? item.image : `${BASE_URL}${item.image}`}
+                              src={getImageUrl(item.image)}
                               alt={item.name}
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                             />

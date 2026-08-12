@@ -9,6 +9,7 @@ import { Sun, Moon, ArrowRight, Sparkles, Eye, EyeOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { settingsService } from "@/api/services/settingsService";
 import { BASE_URL } from "@/api/apiClient";
+import { getImageUrl } from "@/lib/utils";
 
 import { toast } from "sonner";
 import { authService } from "@/api";
@@ -62,7 +63,7 @@ function LoginPage() {
         <div className="relative z-10 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700">
           <div className="size-11 rounded-2xl bg-primary flex items-center justify-center copper-glow overflow-hidden">
             {settings?.logoUrl ? (
-              <img src={settings.logoUrl.startsWith("http") ? settings.logoUrl : `${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-cover" />
+              <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-cover" />
             ) : (
               <span className="font-serif text-primary-foreground text-xl">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
             )}
@@ -88,7 +89,7 @@ function LoginPage() {
           <div className="flex-1 flex items-center gap-2">
             <div className="size-9 rounded-xl bg-primary flex items-center justify-center overflow-hidden">
               {settings?.logoUrl ? (
-                <img src={settings.logoUrl.startsWith("http") ? settings.logoUrl : `${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-cover" />
+                <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-cover" />
               ) : (
                 <span className="font-serif text-primary-foreground">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
               )}

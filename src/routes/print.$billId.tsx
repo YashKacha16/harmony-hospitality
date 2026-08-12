@@ -1,9 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { billingService } from "@/api/services/billingService";
 import { settingsService } from "@/api/services/settingsService";
 import { useEffect } from "react";
-import { BASE_URL } from "@/api/apiClient";
+import { getImageUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/print/$billId")({
   component: PrintBillPage,
@@ -47,11 +47,13 @@ function PrintBillPage() {
       <div className="max-w-md mx-auto border border-gray-200 p-6 shadow-sm print:shadow-none print:border-none print:p-0">
         <div className="text-center mb-6">
           {settings?.logoUrl && (
-            <img 
-              src={settings.logoUrl.startsWith("http") ? settings.logoUrl : `${BASE_URL}${settings.logoUrl}`} 
-              alt="Logo" 
-              className="h-16 mx-auto mb-3 object-contain print:grayscale" 
-            />
+            <div className="mb-2 h-16 grayscale">
+              <img 
+                src={getImageUrl(settings.logoUrl)} 
+                alt="Logo" 
+                className="h-full w-full object-contain" 
+              />
+            </div>
           )}
           <h1 className="text-2xl font-bold uppercase tracking-wider">{settings?.name || "Restaurant"}</h1>
           {settings?.address && <p className="text-sm text-gray-600 mt-1 whitespace-pre-wrap leading-tight">{settings.address}</p>}

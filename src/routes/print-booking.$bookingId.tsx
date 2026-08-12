@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query";
 import { bookingService } from "@/api/services/bookingService";
 import { settingsService } from "@/api/services/settingsService";
 import React, { useEffect } from "react";
-import { BASE_URL } from "@/api/apiClient";
+import { getImageUrl } from "@/lib/utils";
 
 export const Route = createFileRoute("/print-booking/$bookingId")({
   component: PrintBookingBillPage,
@@ -57,11 +57,13 @@ function PrintBookingBillPage() {
             </p>
           </div>
           {settings?.logoUrl && (
-            <img 
-              src={settings.logoUrl.startsWith("http") ? settings.logoUrl : `${BASE_URL}${settings.logoUrl}`} 
-              alt="Logo" 
-              className="h-20 object-contain print:grayscale" 
-            />
+            <div className="mb-2 h-16 grayscale">
+              <img 
+                src={getImageUrl(settings.logoUrl)} 
+                alt="Logo" 
+                className="h-full w-full object-contain" 
+              />
+            </div>
           )}
         </div>
 

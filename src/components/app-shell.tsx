@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { cn } from "@/lib/utils";
+import { cn, getImageUrl } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
 import { settingsService } from "@/api/services/settingsService";
 import { BASE_URL } from "@/api/apiClient";
@@ -95,7 +95,7 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
         <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border overflow-hidden shrink-0">
           <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-[0_0_20px_-4px_var(--sidebar-primary)] shrink-0">
             {settings?.logoUrl ? (
-              <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+              <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
             ) : (
               <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
             )}
@@ -163,10 +163,10 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
           <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <aside className="absolute left-0 top-0 h-full w-72 bg-sidebar text-sidebar-foreground p-4 animate-in slide-in-from-left duration-300">
             <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3 overflow-hidden">
+              <div className="flex items-center gap-3 w-full">
                 <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shrink-0">
                   {settings?.logoUrl ? (
-                    <img src={`${BASE_URL}${settings.logoUrl}`} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
+                    <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
                   ) : (
                     <span className="font-serif font-semibold text-sidebar-primary-foreground text-lg">{settings?.name?.[0]?.toUpperCase() || "A"}</span>
                   )}

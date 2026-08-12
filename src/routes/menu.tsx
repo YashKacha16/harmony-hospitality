@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { menuService, categoryService, MenuGrouped } from "@/api";
 import { settingsService } from "@/api/services/settingsService";
 import { BASE_URL } from "@/api/apiClient";
+import { getImageUrl } from "@/lib/utils";
 import { MenuItem } from "@/types/models";
 import { extractCurrencySymbol } from "@/lib/utils";
 import { Card } from "@/components/ui/card";
@@ -350,12 +351,6 @@ function MenuItemCard({ item, onEdit, onDelete, onToggle, canEdit = true, canDel
     onToggle(item.id!);
   };
 
-  const getFoodImage = (imagePath?: string) => {
-    if (!imagePath) return undefined;
-    if (imagePath.startsWith("http")) return imagePath;
-    return `${BASE_URL}${imagePath}`;
-  };
-
   return (
     <Card className={cn(
       "p-0 rounded-2xl overflow-hidden border border-white/10 flex flex-col transition-all duration-300",
@@ -363,7 +358,7 @@ function MenuItemCard({ item, onEdit, onDelete, onToggle, canEdit = true, canDel
     )}>
       <div className="h-40 overflow-hidden bg-muted/40 relative flex items-center justify-center">
         {item.image ? (
-          <img src={getFoodImage(item.image)} alt={item.name} className="w-full h-full object-cover" />
+          <img src={getImageUrl(item.image)} alt={item.name} className="w-full h-full object-cover" />
         ) : (
           <UtensilsCrossed className="size-12 text-muted-foreground opacity-30" />
         )}

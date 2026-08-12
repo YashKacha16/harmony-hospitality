@@ -57,7 +57,7 @@ export function ActiveGuestsTab({ bookings }: Props) {
                       search: {
                         tab: "room-service",
                         roomNumber: b.room.number
-                      }
+                      } as any
                     });
                   }
                 }}

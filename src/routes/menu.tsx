@@ -26,6 +26,7 @@ import {
   arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy, useSortable 
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
+import { permissionService, RoleConfig } from "@/lib/permissionService";
 
 export const Route = createFileRoute("/menu")({
   head: () => ({ 
@@ -47,6 +48,29 @@ function MenuPage() {
     mode: "create",
     initialData: null
   });
+
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
+
+  const { data: roles = [] } = useQuery<RoleConfig[]>({
+    queryKey: ["roles"],
+    queryFn: () => permissionService.getRoles()
+  });
+
+  const canAdd = (() => {
+    const roleConfig = roles.find((r: RoleConfig) => r.name.toLowerCase() === user.role.toLowerCase());
+    return roleConfig ? !!roleConfig.permissions.menu?.add : permissionService.hasPermission(user.role, "menu", "add");
+  })();
+
+  const canEdit = (() => {
+    const roleConfig = roles.find((r: RoleConfig) => r.name.toLowerCase() === user.role.toLowerCase());
+    return roleConfig ? !!roleConfig.permissions.menu?.edit : permissionService.hasPermission(user.role, "menu", "edit");
+  })();
+
+  const canDelete = (() => {
+    const roleConfig = roles.find((r: RoleConfig) => r.name.toLowerCase() === user.role.toLowerCase());
+    return roleConfig ? !!roleConfig.permissions.menu?.delete : permissionService.hasPermission(user.role, "menu", "delete");
+  })();
 
   const { data: menuData = [], isLoading } = useQuery<MenuGrouped[]>({
     queryKey: ["groupedMenu"],
@@ -119,9 +143,11 @@ function MenuPage() {
           <UtensilsCrossed className="size-12 text-muted-foreground mb-4" />
           <h3 className="text-lg font-medium">No categories yet</h3>
           <p className="text-sm text-muted-foreground mt-1 mb-6">Create a category to start building your menu.</p>
-          <Button onClick={() => setIsAddCatOpen(true)} className="rounded-xl bg-primary text-primary-foreground copper-glow">
-            <Plus className="size-4 mr-1" /> Add category
-          </Button>
+          {canAdd && (
+            <Button onClick={() => setIsAddCatOpen(true)} className="rounded-xl bg-primary text-primary-foreground copper-glow">
+              <Plus className="size-4 mr-1" /> Add category
+            </Button>
+          )}
           <AddCategoryModal isOpen={isAddCatOpen} onClose={() => setIsAddCatOpen(false)} />
         </div>
       </AppShell>
@@ -142,13 +168,18 @@ function MenuPage() {
               deleteCategoryMutation.mutate(id);
             }
           }}
+          canAdd={canAdd}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
-        <Button 
-          onClick={() => setItemModal({ isOpen: true, mode: "create", initialData: null })} 
-          className="rounded-xl bg-primary text-primary-foreground copper-glow ml-auto"
-        >
-          <Plus className="size-4 mr-1" /> Add item
-        </Button>
+        {canAdd && (
+          <Button 
+            onClick={() => setItemModal({ isOpen: true, mode: "create", initialData: null })} 
+            className="rounded-xl bg-primary text-primary-foreground copper-glow ml-auto"
+          >
+            <Plus className="size-4 mr-1" /> Add item
+          </Button>
+        )}
       </div>
 
       {activeCategory && (
@@ -161,19 +192,25 @@ function MenuPage() {
             }
           }}
           onToggle={(id) => toggleAvailabilityMutation.mutate(id)}
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       )}
 
-      <AddCategoryModal 
-        isOpen={isAddCatOpen} 
-        onClose={() => setIsAddCatOpen(false)} 
-      />
+      {canAdd && (
+        <AddCategoryModal 
+          isOpen={isAddCatOpen} 
+          onClose={() => setIsAddCatOpen(false)} 
+        />
+      )}
 
-      <ReorderCategoriesModal 
-        isOpen={isReorderCatOpen} 
-        categories={menuData} 
-        onClose={() => setIsReorderCatOpen(false)} 
-      />
+      {canEdit && (
+        <ReorderCategoriesModal 
+          isOpen={isReorderCatOpen} 
+          categories={menuData} 
+          onClose={() => setIsReorderCatOpen(false)} 
+        />
+      )}
 
       <ItemFormModal 
         isOpen={itemModal.isOpen} 
@@ -194,9 +231,12 @@ interface CategoryTabsProps {
   onAddClick: () => void;
   onReorderClick: () => void;
   onDeleteCategory: (id: number) => void;
+  canAdd?: boolean;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-function CategoryTabs({ data, activeCategoryId, onSelect, onAddClick, onReorderClick, onDeleteCategory }: CategoryTabsProps) {
+function CategoryTabs({ data, activeCategoryId, onSelect, onAddClick, onReorderClick, onDeleteCategory, canAdd = true, canEdit = true, canDelete = true }: CategoryTabsProps) {
   return (
     <div className="flex items-center gap-3 flex-wrap">
       <div className="flex bg-muted/50 p-1.5 rounded-xl border border-white/5 flex-wrap gap-1">
@@ -215,27 +255,33 @@ function CategoryTabs({ data, activeCategoryId, onSelect, onAddClick, onReorderC
               >
                 {c.categoryName}
               </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); onDeleteCategory(c.categoryId); }}
-                className="opacity-0 group-hover:opacity-100 hover:text-destructive absolute -top-1 -right-1 bg-background size-5 rounded-full border border-border shadow flex items-center justify-center transition-all cursor-pointer text-[10px]"
-                title="Delete category"
-              >
-                ×
-              </button>
+              {canDelete && (
+                <button 
+                  onClick={(e) => { e.stopPropagation(); onDeleteCategory(c.categoryId); }}
+                  className="opacity-0 group-hover:opacity-100 hover:text-destructive absolute -top-1 -right-1 bg-background size-5 rounded-full border border-border shadow flex items-center justify-center transition-all cursor-pointer text-[10px]"
+                  title="Delete category"
+                >
+                  ×
+                </button>
+              )}
             </div>
           );
         })}
-        <button 
-          onClick={onAddClick}
-          className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition border border-dashed border-white/10"
-          title="Add Category"
-        >
-          <Plus className="size-4" />
-        </button>
+        {canAdd && (
+          <button 
+            onClick={onAddClick}
+            className="size-8 rounded-lg bg-muted flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition border border-dashed border-white/10"
+            title="Add Category"
+          >
+            <Plus className="size-4" />
+          </button>
+        )}
       </div>
-      <Button onClick={onReorderClick} variant="ghost" size="sm" className="h-9 text-muted-foreground hover:text-foreground font-medium rounded-xl">
-        <GripVertical className="size-4 mr-1 text-muted-foreground" /> Reorder categories
-      </Button>
+      {canEdit && (
+        <Button onClick={onReorderClick} variant="ghost" size="sm" className="h-9 text-muted-foreground hover:text-foreground font-medium rounded-xl">
+          <GripVertical className="size-4 mr-1 text-muted-foreground" /> Reorder categories
+        </Button>
+      )}
     </div>
   );
 }
@@ -246,9 +292,11 @@ interface MenuGridProps {
   onEdit: (item: MenuItem) => void;
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-function MenuGrid({ items, onEdit, onDelete, onToggle }: MenuGridProps) {
+function MenuGrid({ items, onEdit, onDelete, onToggle, canEdit = true, canDelete = true }: MenuGridProps) {
   if (items.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-20 bg-muted/10 border border-white/5 rounded-2xl">
@@ -267,6 +315,8 @@ function MenuGrid({ items, onEdit, onDelete, onToggle }: MenuGridProps) {
           onEdit={onEdit} 
           onDelete={onDelete} 
           onToggle={onToggle} 
+          canEdit={canEdit}
+          canDelete={canDelete}
         />
       ))}
     </div>
@@ -279,9 +329,11 @@ interface MenuItemCardProps {
   onEdit: (item: MenuItem) => void;
   onDelete: (id: number) => void;
   onToggle: (id: number) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 }
 
-function MenuItemCard({ item, onEdit, onDelete, onToggle }: MenuItemCardProps) {
+function MenuItemCard({ item, onEdit, onDelete, onToggle, canEdit = true, canDelete = true }: MenuItemCardProps) {
   const { data: settings } = useQuery({ queryKey: ["settings"], queryFn: settingsService.getGeneralSettings });
   const currency = extractCurrencySymbol(settings?.currency);
   const [localAvailable, setLocalAvailable] = useState(item.available);
@@ -292,6 +344,7 @@ function MenuItemCard({ item, onEdit, onDelete, onToggle }: MenuItemCardProps) {
   }, [item.available]);
 
   const handleToggle = () => {
+    if (!canEdit) return;
     const nextVal = !localAvailable;
     setLocalAvailable(nextVal); // Optimistic Update
     onToggle(item.id!);
@@ -328,17 +381,21 @@ function MenuItemCard({ item, onEdit, onDelete, onToggle }: MenuItemCardProps) {
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2 min-h-[32px]">{item.description}</p>
         </div>
         <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-          <label className="flex items-center gap-2 text-xs font-medium cursor-pointer">
-            <Switch checked={localAvailable} onCheckedChange={handleToggle} />
+          <label className={cn("flex items-center gap-2 text-xs font-medium", canEdit ? "cursor-pointer" : "cursor-not-allowed opacity-70")}>
+            <Switch checked={localAvailable} onCheckedChange={handleToggle} disabled={!canEdit} />
             Available
           </label>
           <div className="flex items-center gap-1">
-            <Button size="sm" variant="ghost" className="size-8 p-0 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer" onClick={() => onEdit(item)}>
-              <Pencil className="size-3.5" />
-            </Button>
-            <Button size="sm" variant="ghost" className="size-8 p-0 text-destructive/80 hover:text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => onDelete(item.id!)}>
-              <Trash2 className="size-3.5" />
-            </Button>
+            {canEdit && (
+              <Button size="sm" variant="ghost" className="size-8 p-0 hover:bg-muted text-muted-foreground hover:text-foreground cursor-pointer" onClick={() => onEdit(item)}>
+                <Pencil className="size-3.5" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button size="sm" variant="ghost" className="size-8 p-0 text-destructive/80 hover:text-destructive hover:bg-destructive/10 cursor-pointer" onClick={() => onDelete(item.id!)}>
+                <Trash2 className="size-3.5" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

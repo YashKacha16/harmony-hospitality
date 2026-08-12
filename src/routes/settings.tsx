@@ -419,6 +419,16 @@ function SettingsPage() {
                     />
                   </div>
                 </div>
+                <div>
+                  <Label>Extra bed rate (per night)</Label>
+                  <Input 
+                    type="number"
+                    value={form.extraBedPrice ?? 500} 
+                    onChange={(e) => setForm(prev => ({ ...prev, extraBedPrice: parseFloat(e.target.value) || 0 }))}
+                    className="rounded-xl mt-1" 
+                    placeholder="500"
+                  />
+                </div>
                 <div className="grid grid-cols-2 gap-3 mt-4">
                   <div>
                     <Label>Estimated wait time (minutes)</Label>
@@ -466,21 +476,60 @@ function SettingsPage() {
             <div className="font-serif text-lg mb-2">Cancellation tiers</div>
             <p className="text-sm text-muted-foreground mb-4">These rules appear in the Bookings cancellation flow.</p>
             <div className="grid md:grid-cols-3 gap-3">
-              {[
-                { l: "7+ days before check-in", pct: 100, tone: "border-success/40 bg-success/5" },
-                { l: "3–6 days before", pct: 50, tone: "border-warning/40 bg-warning/5" },
-                { l: "Within 48 hrs", pct: 0, tone: "border-destructive/40 bg-destructive/5" },
-              ].map((t, i) => (
-                <Card key={i} className={`p-4 rounded-xl ${t.tone}`}>
-                  <div className="text-xs text-muted-foreground">{t.l}</div>
-                  <div className="mt-2 flex items-center gap-2">
-                    <Input defaultValue={t.pct} className="w-20 rounded-lg" />
-                    <span className="text-sm text-muted-foreground">% refunded</span>
-                  </div>
-                </Card>
-              ))}
+              <Card className="p-4 rounded-xl border-success/40 bg-success/5">
+                <div className="text-xs text-muted-foreground">7+ days before check-in</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input 
+                    type="number" 
+                    min={0} 
+                    max={100} 
+                    value={form.cancellation7DaysRefundPercent ?? 100} 
+                    onChange={e => setForm({ ...form, cancellation7DaysRefundPercent: parseFloat(e.target.value) || 0 })} 
+                    className="w-24 rounded-lg" 
+                  />
+                  <span className="text-sm text-muted-foreground">% refunded</span>
+                </div>
+              </Card>
+
+              <Card className="p-4 rounded-xl border-warning/40 bg-warning/5">
+                <div className="text-xs text-muted-foreground">3–6 days before</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input 
+                    type="number" 
+                    min={0} 
+                    max={100} 
+                    value={form.cancellation3To6DaysRefundPercent ?? 50} 
+                    onChange={e => setForm({ ...form, cancellation3To6DaysRefundPercent: parseFloat(e.target.value) || 0 })} 
+                    className="w-24 rounded-lg" 
+                  />
+                  <span className="text-sm text-muted-foreground">% refunded</span>
+                </div>
+              </Card>
+
+              <Card className="p-4 rounded-xl border-destructive/40 bg-destructive/5">
+                <div className="text-xs text-muted-foreground">Within 48 hrs</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <Input 
+                    type="number" 
+                    min={0} 
+                    max={100} 
+                    value={form.cancellationWithin48HoursRefundPercent ?? 0} 
+                    onChange={e => setForm({ ...form, cancellationWithin48HoursRefundPercent: parseFloat(e.target.value) || 0 })} 
+                    className="w-24 rounded-lg" 
+                  />
+                  <span className="text-sm text-muted-foreground">% refunded</span>
+                </div>
+              </Card>
             </div>
-            <div className="mt-4"><Button className="rounded-xl bg-primary text-primary-foreground" onClick={() => toast.success("Policy updated")}>Save policy</Button></div>
+            <div className="mt-6">
+              <Button 
+                disabled={updateMutation.isPending} 
+                className="rounded-xl bg-primary text-primary-foreground" 
+                onClick={handleSave}
+              >
+                {updateMutation.isPending ? "Saving..." : "Save policy"}
+              </Button>
+            </div>
           </Card>
         </TabsContent>
 
@@ -782,16 +831,6 @@ function SettingsPage() {
                 placeholder="e.g. Aditi Rao"
                 value={chefFormName}
                 onChange={e => setChefFormName(e.target.value)}
-                className="rounded-xl"
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="chefRole">Role / Title</Label>
-              <Input
-                id="chefRole"
-                placeholder="e.g. Executive Chef, Sous Chef"
-                value={chefFormRole}
-                onChange={e => setChefFormRole(e.target.value)}
                 className="rounded-xl"
               />
             </div>

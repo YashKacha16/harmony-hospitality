@@ -140,7 +140,19 @@ function PrintBookingBillPage() {
         {/* Totals Section */}
         <div className="flex justify-end">
           <div className="w-80 space-y-3 text-sm">
-            <div className="flex justify-between text-gray-700 px-4">
+            {bill.taxesAmount !== undefined && (
+              <div className="flex justify-between text-gray-700 px-4">
+                <span>Taxes ({bill.cgstPercent + bill.sgstPercent}%)</span>
+                <span className="font-medium">{currencySymbol}{bill.taxesAmount.toFixed(2)}</span>
+              </div>
+            )}
+            {bill.serviceChargeAmount !== undefined && (
+              <div className="flex justify-between text-gray-700 px-4">
+                <span>Service Charge ({bill.serviceChargePercent}%)</span>
+                <span className="font-medium">{currencySymbol}{bill.serviceChargeAmount.toFixed(2)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-gray-700 px-4 pt-2 border-t border-gray-200">
               <span>Total Amount</span>
               <span className="font-medium">{currencySymbol}{bill.totalAmount.toFixed(2)}</span>
             </div>

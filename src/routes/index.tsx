@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useTheme } from "@/lib/theme";
-import { Sun, Moon, ArrowRight, Sparkles } from "lucide-react";
+import { Sun, Moon, ArrowRight, Sparkles, Eye, EyeOff } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { settingsService } from "@/api/services/settingsService";
 import { BASE_URL } from "@/api/apiClient";
@@ -30,6 +30,7 @@ function LoginPage() {
   const { theme, toggle } = useTheme();
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [loading, setLoading] = useState(false);
 
@@ -138,21 +139,68 @@ function LoginPage() {
             >
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} className="h-12 rounded-xl" required />
+                <Input 
+                  id="email" 
+                  type="email" 
+                  value={email} 
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setEmail(val);
+                    if (rememberMe) {
+                      localStorage.setItem("rememberedEmail", val);
+                    }
+                  }} 
+                  className="h-12 rounded-xl" 
+                  required 
+                />
               </div>
               <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <Label htmlFor="pw">Password</Label>
-                  <a href="#" className="text-xs text-primary hover:underline">Forgot password?</a>
+                <Label htmlFor="pw">Password</Label>
+                <div className="relative">
+                  <Input 
+                    id="pw" 
+                    type={showPw ? "text" : "password"} 
+                    value={pw} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setPw(val);
+                      if (rememberMe) {
+                        localStorage.setItem("rememberedPw", val);
+                      }
+                    }} 
+                    className="h-12 rounded-xl pr-10" 
+                    required 
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition cursor-pointer p-1"
+                    title={showPw ? "Hide password" : "Show password"}
+                  >
+                    {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
                 </div>
-                <Input id="pw" type="password" value={pw} onChange={(e) => setPw(e.target.value)} className="h-12 rounded-xl" required />
               </div>
 
               <div className="flex items-center space-x-2">
-                <Checkbox id="remember" checked={rememberMe} onCheckedChange={(checked) => setRememberMe(checked as boolean)} />
+                <Checkbox 
+                  id="remember" 
+                  checked={rememberMe} 
+                  onCheckedChange={(checked) => {
+                    const isChecked = !!checked;
+                    setRememberMe(isChecked);
+                    if (isChecked) {
+                      if (email) localStorage.setItem("rememberedEmail", email);
+                      if (pw) localStorage.setItem("rememberedPw", pw);
+                    } else {
+                      localStorage.removeItem("rememberedEmail");
+                      localStorage.removeItem("rememberedPw");
+                    }
+                  }} 
+                />
                 <label
                   htmlFor="remember"
-                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground"
+                  className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-muted-foreground cursor-pointer"
                 >
                   Remember me
                 </label>

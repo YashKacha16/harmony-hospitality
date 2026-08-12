@@ -118,8 +118,11 @@ function Dashboard() {
               {recentOrders.map((o: any) => (
                 <div key={o.id} className="flex items-center justify-between text-sm py-2 border-b border-border last:border-0">
                   <div>
-                    <div className="font-medium">Order #{o.id} {o.orderType ? `· ${o.orderType}` : ""}</div>
-                    <div className="text-xs text-muted-foreground">{o.items?.length || 0} items</div>
+                    <div className="font-medium">
+                      {o.orderNumber || `ORD-${String(o.id).padStart(4, '0')}`} 
+                      {o.tableName ? ` · Table ${o.tableName}` : o.roomNumber ? ` · Room ${o.roomNumber}` : o.customerName ? ` · ${o.customerName}` : ""}
+                    </div>
+                    <div className="text-xs text-muted-foreground">{o.items?.length || 0} item{(o.items?.length || 0) === 1 ? "" : "s"} {o.type ? `· ${o.type}` : ""}</div>
                   </div>
                   <StatusBadge status={o.status} />
                 </div>

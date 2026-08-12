@@ -109,11 +109,54 @@ function RootShell({ children }: { children: ReactNode }) {
   );
 }
 
+import { useQuery } from "@tanstack/react-query";
+import { settingsService } from "@/api/services/settingsService";
+
+function TitleManager() {
+  const { data: settings } = useQuery({
+    queryKey: ["settings", "general"],
+    queryFn: () => settingsService.getGeneralSettings(),
+    staleTime: 1000 * 60 * 5,
+  });
+
+  useEffect(() => {
+    if (!settings?.name) return;
+
+    const realName = settings.name;
+
+    const updateTitle = () => {
+      if (/Aurelia Hospitality OS/gi.test(document.title)) {
+        document.title = document.title.replace(/Aurelia Hospitality OS/gi, realName);
+      } else if (/Aurelia/gi.test(document.title)) {
+        document.title = document.title.replace(/Aurelia/gi, realName);
+      } else if (!document.title.toLowerCase().includes(realName.toLowerCase())) {
+        document.title = `${document.title.split('—')[0].trim()} — ${realName}`;
+      }
+    };
+
+    updateTitle();
+
+    const titleEl = document.querySelector("title");
+    if (!titleEl) return;
+
+    const observer = new MutationObserver(() => {
+      updateTitle();
+    });
+
+    observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
+
+    return () => observer.disconnect();
+  }, [settings?.name]);
+
+  return null;
+}
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
+        <TitleManager />
         <Outlet />
         <Toaster richColors position="top-right" />
       </ThemeProvider>

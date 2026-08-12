@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { bookingService } from "@/api/services/bookingService";
+import { settingsService } from "@/api/services/settingsService";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Receipt, CheckCircle, Printer } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -24,6 +25,13 @@ export function CheckoutDrawer({ bookingId, open, onOpenChange, mode = "checkout
     queryFn: () => bookingId ? bookingService.getRoomBill(bookingId) : Promise.reject(),
     enabled: !!bookingId && open
   });
+
+  const { data: settings } = useQuery({
+    queryKey: ['settings'],
+    queryFn: () => settingsService.getGeneralSettings(),
+  });
+
+  const currencySymbol = settings?.currency?.match(/\((.*?)\)/)?.[1] || settings?.currency || "$";
 
   const checkoutMutation = useMutation({
     mutationFn: () => {
@@ -79,27 +87,39 @@ export function CheckoutDrawer({ bookingId, open, onOpenChange, mode = "checkout
               <div className="space-y-3">
                 <h3 className="font-semibold text-lg">Bill Breakdown</h3>
                 <div className="flex justify-between items-center text-sm">
-                  <span>Room Charges ({bill.billedNights} x ${bill.roomPricePerNight})</span>
-                  <span>${bill.totalRoomAmount.toFixed(2)}</span>
+                  <span>Room Charges ({bill.billedNights} x {currencySymbol}{bill.roomPricePerNight})</span>
+                  <span>{currencySymbol}{bill.totalRoomAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between items-center text-sm">
                   <span>Restaurant & Room Service</span>
-                  <span>${bill.totalRestaurantAmount.toFixed(2)}</span>
+                  <span>{currencySymbol}{bill.totalRestaurantAmount.toFixed(2)}</span>
                 </div>
+                {bill.taxesAmount !== undefined && (
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>Taxes ({bill.cgstPercent + bill.sgstPercent}%)</span>
+                    <span>{currencySymbol}{bill.taxesAmount.toFixed(2)}</span>
+                  </div>
+                )}
+                {bill.serviceChargeAmount !== undefined && (
+                  <div className="flex justify-between items-center text-sm text-muted-foreground">
+                    <span>Service Charge ({bill.serviceChargePercent}%)</span>
+                    <span>{currencySymbol}{bill.serviceChargeAmount.toFixed(2)}</span>
+                  </div>
+                )}
                 {bill.restaurantOrders && bill.restaurantOrders.length > 0 && (
                   <div className="pl-4 text-xs text-muted-foreground space-y-1 mt-1 border-l-2 border-primary/20">
                     {bill.restaurantOrders.map((o: any) => (
                       <div key={o.id} className="flex flex-col space-y-1">
                         <div className="flex justify-between">
                           <span>Order {o.orderNumber}</span>
-                          <span>${o.subtotal.toFixed(2)}</span>
+                          <span>{currencySymbol}{o.subtotal.toFixed(2)}</span>
                         </div>
                         {o.items && o.items.length > 0 && (
                           <div className="pl-3 space-y-0.5 border-l border-border/40 mt-1 mb-2">
                             {o.items.map((item: any, idx: number) => (
                               <div key={`${o.id}-item-${idx}`} className="flex justify-between text-[11px] text-muted-foreground/80">
                                 <span>{item.name} x {item.quantity}</span>
-                                <span>${(item.priceAtOrder * item.quantity).toFixed(2)}</span>
+                                <span>{currencySymbol}{(item.priceAtOrder * item.quantity).toFixed(2)}</span>
                               </div>
                             ))}
                           </div>
@@ -111,15 +131,15 @@ export function CheckoutDrawer({ bookingId, open, onOpenChange, mode = "checkout
                 
                 <div className="pt-3 border-t flex justify-between font-medium">
                   <span>Total Amount</span>
-                  <span>${bill.totalAmount.toFixed(2)}</span>
+                  <span>{currencySymbol}{bill.totalAmount.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-emerald-600 font-medium">
                   <span>Advance Paid</span>
-                  <span>-${bill.advanceAmount.toFixed(2)}</span>
+                  <span>-{currencySymbol}{bill.advanceAmount.toFixed(2)}</span>
                 </div>
                 <div className="pt-3 border-t flex justify-between text-xl font-bold text-primary">
                   <span>Amount Due</span>
-                  <span>${bill.dueAmount.toFixed(2)}</span>
+                  <span>{currencySymbol}{bill.dueAmount.toFixed(2)}</span>
                 </div>
               </div>
 

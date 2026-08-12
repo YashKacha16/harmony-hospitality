@@ -10,10 +10,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Upload, Phone } from "lucide-react";
+import { Plus, Upload, Phone, Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { permissionService } from "@/lib/permissionService";
 
 export const Route = createFileRoute("/employees")({
@@ -31,6 +31,9 @@ function EmpPage() {
   const shifts = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
   const queryClient = useQueryClient();
 
+  const userRaw = typeof window !== 'undefined' ? localStorage.getItem("user") : null;
+  const user = userRaw ? JSON.parse(userRaw) : { role: "Admin" };
+
   const { data: employees = [], isLoading } = useQuery({
     queryKey: ["employees"],
     queryFn: employeeService.getAll
@@ -42,6 +45,10 @@ function EmpPage() {
   });
 
   const roleNames = dbRoles.length > 0 ? dbRoles.map(r => r.name) : ["Admin", "Waiter", "Chef"];
+
+  const currentRoleConfig = dbRoles.find(r => r.name.toLowerCase() === user.role.toLowerCase());
+  const canAdd = currentRoleConfig ? !!currentRoleConfig.permissions.employees?.add : permissionService.hasPermission(user.role, "employees", "add");
+  const canEdit = currentRoleConfig ? !!currentRoleConfig.permissions.employees?.edit : permissionService.hasPermission(user.role, "employees", "edit");
 
   const updateMutation = useMutation({
     mutationFn: ({ id, employee }: { id: number; employee: any }) => employeeService.update(id, employee),
@@ -62,7 +69,7 @@ function EmpPage() {
 
   return (
     <AppShell title="Employees" breadcrumbs={[{ label: "Home", to: "/dashboard" }, { label: "Employees" }]}>
-      <div className="flex justify-end mb-4"><AddEmpSheet roles={roleNames} /></div>
+      {canAdd && <div className="flex justify-end mb-4"><AddEmpSheet roles={roleNames} /></div>}
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mt-2">
           {employees.map(e => (
@@ -79,13 +86,15 @@ function EmpPage() {
                 <div className="flex items-center gap-1.5"><Phone className="size-3" /> {e.email}</div>
                 <div>Joined: <span className="text-foreground">{e.joined}</span></div>
               </div>
-              <div className="mt-3 flex gap-2">
-                <Select defaultValue={e.role} onValueChange={(val: string) => updateMutation.mutate({ id: e.id!, employee: { ...e, role: val } })}>
-                  <SelectTrigger className="h-8 rounded-lg text-xs flex-1"><SelectValue /></SelectTrigger>
-                  <SelectContent>{roleNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
-                </Select>
-                <EditEmpSheet employee={e} roles={roleNames} />
-              </div>
+              {canEdit && (
+                <div className="mt-3 flex gap-2">
+                  <Select defaultValue={e.role} onValueChange={(val: string) => updateMutation.mutate({ id: e.id!, employee: { ...e, role: val } })}>
+                    <SelectTrigger className="h-8 rounded-lg text-xs flex-1"><SelectValue /></SelectTrigger>
+                    <SelectContent>{roleNames.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}</SelectContent>
+                  </Select>
+                  <EditEmpSheet employee={e} roles={roleNames} />
+                </div>
+              )}
             </Card>
           ))}
       </div>
@@ -96,6 +105,7 @@ function EmpPage() {
 function AddEmpSheet({ roles }: { roles: string[] }) {
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState(roles[0] || "Waiter");
+  const [showPw, setShowPw] = useState(false);
   const queryClient = useQueryClient();
 
   const createMutation = useMutation({
@@ -151,7 +161,20 @@ function AddEmpSheet({ roles }: { roles: string[] }) {
           <div><Label>Name</Label><Input name="name" className="rounded-xl mt-1" required autoComplete="off" /></div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Email</Label><Input name="email" type="email" className="rounded-xl mt-1" required autoComplete="off" /></div>
-            <div><Label>Password</Label><Input name="password" type="password" className="rounded-xl mt-1" required autoComplete="new-password" /></div>
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input name="password" type={showPw ? "text" : "password"} className="rounded-xl mt-1 pr-9" required autoComplete="new-password" />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition cursor-pointer p-1"
+                  title={showPw ? "Hide password" : "Show password"}
+                >
+                  {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-3">
              <div><Label>Role</Label>
@@ -171,7 +194,17 @@ function AddEmpSheet({ roles }: { roles: string[] }) {
 
 function EditEmpSheet({ employee, roles }: { employee: any; roles: string[] }) {
   const [open, setOpen] = useState(false);
+  const [password, setPassword] = useState("");
+  const [showPw, setShowPw] = useState(false);
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (open) {
+      setPassword("");
+      setShowPw(false);
+    }
+  }, [open]);
+
   const updateMutation = useMutation({
     mutationFn: ({ id, emp }: { id: number; emp: any }) => employeeService.update(id, emp),
     onSuccess: () => {
@@ -195,7 +228,7 @@ function EditEmpSheet({ employee, roles }: { employee: any; roles: string[] }) {
       <SheetTrigger asChild><Button variant="outline" size="sm" className="h-8 rounded-lg text-xs">Edit</Button></SheetTrigger>
       <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
         <SheetHeader><SheetTitle className="font-serif text-2xl">Edit employee</SheetTitle></SheetHeader>
-        <form className="mt-6 space-y-3 px-4" onSubmit={(e) => { 
+        <form className="mt-6 space-y-3 px-4" autoComplete="off" onSubmit={(e) => { 
           e.preventDefault(); 
           const formData = new FormData(e.currentTarget);
 
@@ -204,10 +237,13 @@ function EditEmpSheet({ employee, roles }: { employee: any; roles: string[] }) {
             photoMutation.mutate({ id: employee.id, file: fileInput });
           }
 
+          const passwordVal = password.trim();
+
           const updatedEmp = {
             ...employee,
             name: formData.get("name"),
             email: formData.get("email"),
+            password: passwordVal ? passwordVal : employee.password,
             role: formData.get("role"),
             status: formData.get("status"),
             joined: formData.get("joined")
@@ -219,7 +255,31 @@ function EditEmpSheet({ employee, roles }: { employee: any; roles: string[] }) {
             <Input name="photo" type="file" accept="image/*" className="rounded-xl mt-1" />
           </div>
           <div><Label>Name</Label><Input name="name" defaultValue={employee.name} className="rounded-xl mt-1" /></div>
-          <div><Label>Email</Label><Input name="email" type="email" defaultValue={employee.email} className="rounded-xl mt-1" /></div>
+          <div className="grid grid-cols-2 gap-3">
+            <div><Label>Email</Label><Input name="email" type="email" defaultValue={employee.email} className="rounded-xl mt-1" /></div>
+            <div>
+              <Label>Password</Label>
+              <div className="relative">
+                <Input 
+                  name="password" 
+                  type={showPw ? "text" : "password"} 
+                  value={password} 
+                  onChange={(e) => setPassword(e.target.value)} 
+                  autoComplete="new-password" 
+                  placeholder="Leave empty to keep" 
+                  className="rounded-xl mt-1 pr-9" 
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPw(!showPw)}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition cursor-pointer p-1"
+                  title={showPw ? "Hide password" : "Show password"}
+                >
+                  {showPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Role</Label>
               <Select name="role" defaultValue={employee.role}>

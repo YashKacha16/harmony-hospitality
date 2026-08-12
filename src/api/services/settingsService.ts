@@ -20,6 +20,10 @@ export interface GeneralSettings {
   waitlistEstimatedWaitMinutes?: number;
   waitlistMessage?: string;
   minimumAdvancePercent?: number;
+  cancellation7DaysRefundPercent?: number;
+  cancellation3To6DaysRefundPercent?: number;
+  cancellationWithin48HoursRefundPercent?: number;
+  extraBedPrice?: number;
 }
 
 export const settingsService = {

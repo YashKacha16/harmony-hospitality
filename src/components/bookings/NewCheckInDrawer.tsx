@@ -38,6 +38,7 @@ export function NewCheckInDrawer() {
 
   const [checkOutDate, setCheckOutDate] = useState("");
   const [guests, setGuests] = useState("2");
+  const [extraBeds, setExtraBeds] = useState("0");
   const [advanceAmount, setAdvanceAmount] = useState("");
   const [paymentMethod, setPaymentMethod] = useState("card");
   const [idProofFile, setIdProofFile] = useState<File | null>(null);
@@ -63,7 +64,10 @@ export function NewCheckInDrawer() {
 
   const selectedRoom = rooms.find(r => r.id === roomId);
   const nights = getNights() || 1;
-  const totalPrice = selectedRoom ? selectedRoom.basePrice * nights : 0;
+  const extraBedRate = settings?.extraBedPrice ?? 500;
+  const parsedExtraBeds = parseInt(extraBeds) || 0;
+  const extraBedCost = parsedExtraBeds * extraBedRate * nights;
+  const totalPrice = (selectedRoom ? selectedRoom.basePrice * nights : 0) + extraBedCost;
   const minAdvancePercent = settings?.minimumAdvancePercent || 0;
   const minAdvanceAmount = Math.round(totalPrice * (minAdvancePercent / 100));
 
@@ -104,6 +108,7 @@ export function NewCheckInDrawer() {
       formData.append("CheckInTime", checkInTime);
       formData.append("CheckOutDate", checkOutDate);
       formData.append("Guests", guests);
+      formData.append("ExtraBeds", extraBeds || "0");
       formData.append("AdvanceAmount", advanceAmount || "0");
       formData.append("PaymentMethod", paymentMethod);
       formData.append("Status", "Confirmed");
@@ -123,6 +128,7 @@ export function NewCheckInDrawer() {
       // Reset form
       setGuestName(""); setPhone(""); setEmail(""); setIdNumber("");
       setRoomId(null); setCheckInDate(""); setCheckOutDate(""); setAdvanceAmount("");
+      setExtraBeds("0");
       setIdProofFile(null);
     },
     onError: (err: any) => {
@@ -162,8 +168,14 @@ export function NewCheckInDrawer() {
             const selectedRoom = rooms.find(r => r.id === roomId);
             if (selectedRoom) {
               const parsedGuests = parseInt(guests) || 0;
-              if (parsedGuests > selectedRoom.capacity) {
-                toast.error(`The number of guests (${parsedGuests}) cannot exceed the room capacity (${selectedRoom.capacity}).`);
+              const parsedBeds = parseInt(extraBeds) || 0;
+              if (parsedBeds > 2) {
+                toast.error("Maximum 2 extra beds are allowed per room.");
+                return;
+              }
+              const maxAllowed = selectedRoom.capacity + parsedBeds;
+              if (parsedGuests > maxAllowed) {
+                toast.error(`The number of guests (${parsedGuests}) cannot exceed room capacity (${selectedRoom.capacity}) plus extra beds (${parsedBeds}).`);
                 return;
               }
             }
@@ -281,10 +293,14 @@ export function NewCheckInDrawer() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
             <div>
               <Label>Guests</Label>
               <Input type="number" className="rounded-xl mt-1" value={guests} onChange={e => setGuests(e.target.value)} />
+            </div>
+            <div>
+              <Label>Extra beds</Label>
+              <Input type="number" min={0} max={2} className="rounded-xl mt-1" value={extraBeds} onChange={e => setExtraBeds(e.target.value)} />
             </div>
             <div>
               <Label>Advance {minAdvancePercent > 0 ? `(${minAdvancePercent}%)` : ""}</Label>

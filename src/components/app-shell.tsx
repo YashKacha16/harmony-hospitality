@@ -93,7 +93,13 @@ export function AppShell({ children, title, breadcrumbs }: { children: ReactNode
         )}
       >
         <div className="h-16 flex items-center gap-3 px-4 border-b border-sidebar-border overflow-hidden shrink-0">
-          <div className="size-9 rounded-xl bg-sidebar-primary flex items-center justify-center shadow-[0_0_20px_-4px_var(--sidebar-primary)] shrink-0">
+          <div 
+            className="size-9 rounded-xl flex items-center justify-center shrink-0 shadow-lg"
+            style={{ 
+              backgroundColor: settings?.logoBackgroundColor || '#070e17',
+              boxShadow: `0 4px 10px rgba(0, 0, 0, 0.3), 0 0 20px -4px ${settings?.logoBackgroundColor || 'var(--sidebar-primary)'}`
+            }}
+          >
             {settings?.logoUrl ? (
               <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-contain rounded-xl p-1" />
             ) : (

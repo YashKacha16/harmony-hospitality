@@ -527,8 +527,7 @@ function AddRoomSheet() {
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"]);
   const [capacity, setCapacity] = useState<string>("");
   const [price, setPrice] = useState<string>("");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
 
   useEffect(() => {
     if (!open) {
@@ -540,8 +539,7 @@ function AddRoomSheet() {
       setSelectedAmenities(["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"]);
       setCapacity("");
       setPrice("");
-      setImageFile(null);
-      setImageBase64(null);
+      setImages([]);
     }
   }, [open]);
 
@@ -562,7 +560,7 @@ function AddRoomSheet() {
       basePrice: parseFloat(price) || 0,
       status,
       amenities: selectedAmenities,
-      images: imageBase64 ? [imageBase64] : [],
+      images: images,
       description
     }),
     onSuccess: () => {
@@ -592,7 +590,7 @@ function AddRoomSheet() {
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Category</Label>
               <Select disabled={isFetching} value={selectedCategoryName} onValueChange={setSelectedCategoryName}>
-                <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder={isFetching ? "Loading..." : "Select"} /></SelectTrigger>
+                <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder={isFetching ? "Select" : "Select"} /></SelectTrigger>
                 <SelectContent>
                   {categories.map(c => (
                     <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
@@ -634,35 +632,44 @@ function AddRoomSheet() {
             </div>
           </div>
           <div>
-            <Label>Image</Label>
-            <label className="mt-1 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center text-xs text-muted-foreground gap-2 cursor-pointer hover:bg-muted/20 transition-colors">
-              <input 
-                type="file" 
-                accept="image/*" 
-                className="hidden"
-                onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
-                onChange={e => {
-                  if (e.target.files && e.target.files.length > 0) {
-                    const file = e.target.files[0];
-                    setImageFile(file);
-                    const reader = new FileReader();
-                    reader.onloadend = () => setImageBase64(reader.result as string);
-                    reader.readAsDataURL(file);
-                  }
-                }} 
-              />
-              {imageFile ? (
-                 <div className="relative w-full h-full rounded-xl overflow-hidden group">
-                   <img src={URL.createObjectURL(imageFile)} alt="preview" className="w-full h-full object-cover" />
-                   <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <span className="text-white font-medium truncate max-w-[200px]">{imageFile.name}</span>
-                     <span className="text-white/70 text-[10px]">Click to change</span>
-                   </div>
-                 </div>
-              ) : (
-                <><Upload className="size-4" /> Click or drop image here</>
-              )}
-            </label>
+            <Label>Images</Label>
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              {images.map((img, idx) => (
+                <div key={idx} className="relative h-20 rounded-xl overflow-hidden group border bg-muted">
+                  <img src={img} alt={`preview ${idx}`} className="w-full h-full object-cover" />
+                  <button 
+                    type="button" 
+                    onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
+                    className="absolute top-1 right-1 size-5 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-black transition-colors"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-[10px] text-muted-foreground gap-1 cursor-pointer hover:bg-muted/20 transition-colors">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple
+                  className="hidden"
+                  onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
+                  onChange={e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      const files = Array.from(e.target.files);
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImages(prev => [...prev, reader.result as string]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }
+                  }} 
+                />
+                <Upload className="size-3.5" />
+                <span>Upload Photos</span>
+              </label>
+            </div>
           </div>
           <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} placeholder="Notes about the room…" className="rounded-xl mt-1" /></div>
           <Button disabled={createMutation.isPending} className="w-full rounded-xl bg-primary text-primary-foreground copper-glow">
@@ -858,9 +865,8 @@ function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }
   const maxCapacity = selectedCategory?.capacity;
 
   const [selectedAmenities, setSelectedAmenities] = useState<string[]>(room.amenities || []);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imageBase64, setImageBase64] = useState<string | null>(null);
-
+  const [images, setImages] = useState<string[]>(room.images || []);
+ 
   const updateMutation = useMutation({
     mutationFn: () => roomService.update(room.id, {
       number,
@@ -870,7 +876,7 @@ function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }
       basePrice: parseFloat(price) || 0,
       status,
       amenities: selectedAmenities,
-      images: imageBase64 ? [imageBase64] : room.images,
+      images: images,
       description
     }),
     onSuccess: () => {
@@ -951,36 +957,44 @@ function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }
             </div>
           </div>
           <div>
-            <Label>Image</Label>
-            <label className="mt-1 h-24 rounded-xl border-2 border-dashed border-border flex items-center justify-center text-xs text-muted-foreground gap-2 cursor-pointer hover:bg-muted/20 transition-colors">
-              <input type="file" accept="image/*" className="hidden" onClick={(e) => { (e.target as HTMLInputElement).value = ''; }} onChange={e => {
-                if (e.target.files && e.target.files.length > 0) {
-                  const file = e.target.files[0];
-                  setImageFile(file);
-                  const reader = new FileReader();
-                  reader.onloadend = () => setImageBase64(reader.result as string);
-                  reader.readAsDataURL(file);
-                }
-              }} />
-              {imageFile ? (
-                 <div className="relative w-full h-full rounded-xl overflow-hidden group">
-                   <img src={URL.createObjectURL(imageFile)} alt="preview" className="w-full h-full object-cover" />
-                   <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <span className="text-white font-medium truncate max-w-[200px]">{imageFile.name}</span>
-                     <span className="text-white/70 text-[10px]">Click to change</span>
-                   </div>
-                 </div>
-              ) : room.images && room.images.length > 0 && room.images[0].startsWith('data:') ? (
-                 <div className="relative w-full h-full rounded-xl overflow-hidden group">
-                   <img src={room.images[0]} alt="preview" className="w-full h-full object-cover" />
-                   <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                     <span className="text-white/70 text-[10px]">Click to change</span>
-                   </div>
-                 </div>
-              ) : (
-                <><Upload className="size-4" /> Click or drop image here</>
-              )}
-            </label>
+            <Label>Images</Label>
+            <div className="grid grid-cols-3 gap-2 mt-1">
+              {images.map((img, idx) => (
+                <div key={idx} className="relative h-20 rounded-xl overflow-hidden group border bg-muted">
+                  <img src={img} alt={`preview ${idx}`} className="w-full h-full object-cover" />
+                  <button 
+                    type="button" 
+                    onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
+                    className="absolute top-1 right-1 size-5 rounded-full bg-black/70 flex items-center justify-center text-white hover:bg-black transition-colors"
+                  >
+                    <X className="size-3" />
+                  </button>
+                </div>
+              ))}
+              <label className="h-20 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-[10px] text-muted-foreground gap-1 cursor-pointer hover:bg-muted/20 transition-colors">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  multiple
+                  className="hidden"
+                  onClick={(e) => { (e.target as HTMLInputElement).value = ''; }}
+                  onChange={e => {
+                    if (e.target.files && e.target.files.length > 0) {
+                      const files = Array.from(e.target.files);
+                      files.forEach(file => {
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                          setImages(prev => [...prev, reader.result as string]);
+                        };
+                        reader.readAsDataURL(file);
+                      });
+                    }
+                  }} 
+                />
+                <Upload className="size-3.5" />
+                <span>Upload Photos</span>
+              </label>
+            </div>
           </div>
           <div><Label>Description</Label><Textarea value={description} onChange={e => setDescription(e.target.value)} className="rounded-xl mt-1" /></div>
           <Button disabled={updateMutation.isPending} className="w-full rounded-xl bg-primary text-primary-foreground copper-glow">

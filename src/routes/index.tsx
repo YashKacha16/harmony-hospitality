@@ -61,7 +61,13 @@ function LoginPage() {
         />
         <div className="absolute inset-0 bg-gradient-to-br from-[oklch(0.18_0.03_265)]/85 via-[oklch(0.18_0.03_265)]/60 to-[oklch(0.3_0.1_55)]/40" />
         <div className="relative z-10 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-700">
-          <div className="size-11 rounded-2xl bg-primary flex items-center justify-center copper-glow overflow-hidden">
+          <div 
+            className="size-11 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg border border-white/10"
+            style={{ 
+              backgroundColor: settings?.logoBackgroundColor || 'var(--primary)',
+              boxShadow: `0 8px 24px rgba(0,0,0,0.4), 0 0 15px -3px ${settings?.logoBackgroundColor || 'var(--primary)'}`
+            }}
+          >
             {settings?.logoUrl ? (
               <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-cover" />
             ) : (
@@ -87,7 +93,13 @@ function LoginPage() {
       <div className="flex flex-col p-6 lg:p-12">
         <div className="flex justify-end lg:hidden mb-6 items-center gap-3">
           <div className="flex-1 flex items-center gap-2">
-            <div className="size-9 rounded-xl bg-primary flex items-center justify-center overflow-hidden">
+            <div 
+              className="size-9 rounded-xl flex items-center justify-center overflow-hidden shadow-md"
+              style={{ 
+                backgroundColor: settings?.logoBackgroundColor || 'var(--primary)',
+                boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 10px -2px ${settings?.logoBackgroundColor || 'var(--primary)'}`
+              }}
+            >
               {settings?.logoUrl ? (
                 <img src={getImageUrl(settings.logoUrl)} alt="Logo" className="w-full h-full object-cover" />
               ) : (

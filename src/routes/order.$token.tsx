@@ -235,7 +235,13 @@ function CustomerOrderingPage() {
         <div>
           <div className="flex items-center gap-2 mb-1">
             {settings?.logoUrl && (
-              <div className="size-10 rounded-xl bg-primary flex items-center justify-center shrink-0 shadow-sm overflow-hidden copper-glow">
+              <div 
+                className="size-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden shadow-lg"
+                style={{ 
+                  backgroundColor: settings?.logoBackgroundColor || 'var(--primary)',
+                  boxShadow: `0 4px 12px rgba(0, 0, 0, 0.3), 0 0 10px -2px ${settings?.logoBackgroundColor || 'var(--primary)'}`
+                }}
+              >
                 <img 
                   src={getImageUrl(settings.logoUrl)} 
                   alt="Logo" 

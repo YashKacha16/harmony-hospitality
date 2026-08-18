@@ -5,6 +5,7 @@ export interface GeneralSettings {
   id?: number;
   name: string;
   logoUrl?: string | null;
+  logoBackgroundColor?: string | null;
   welcomeImageUrl?: string | null;
   aboutText?: string | null;
   chefName?: string | null;

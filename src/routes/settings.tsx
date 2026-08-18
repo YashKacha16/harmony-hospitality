@@ -228,6 +228,24 @@ function SettingsPage() {
                   <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
                 </div>
                 <div>
+                  <Label>Logo Background Color</Label>
+                  <div className="flex gap-2 items-center mt-1">
+                    <Input 
+                      type="color" 
+                      value={form.logoBackgroundColor || "#070e17"} 
+                      onChange={e => setForm(f => ({...f, logoBackgroundColor: e.target.value}))}
+                      className="size-10 p-1 rounded-xl cursor-pointer shrink-0 border-0" 
+                    />
+                    <Input 
+                      type="text" 
+                      value={form.logoBackgroundColor || "#070e17"} 
+                      onChange={e => setForm(f => ({...f, logoBackgroundColor: e.target.value}))}
+                      placeholder="#070e17"
+                      className="rounded-xl font-mono uppercase" 
+                    />
+                  </div>
+                </div>
+                <div>
                   <Label>Welcome Section Background Image</Label>
                   <div 
                     className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"

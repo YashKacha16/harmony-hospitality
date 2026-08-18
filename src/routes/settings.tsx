@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Upload, Shield, Lock, Plus, Trash2, X } from "lucide-react";
@@ -43,6 +44,9 @@ function SettingsPage() {
   const [newAmenity, setNewAmenity] = useState("");
   const [newHourName, setNewHourName] = useState("");
   const [newHourValue, setNewHourValue] = useState("");
+  const [is24Hours, setIs24Hours] = useState(false);
+  const [timeFrom, setTimeFrom] = useState("07:00");
+  const [timeTo, setTimeTo] = useState("11:00");
 
   // Roles State (fetch from backend)
   const { data: roles = [], refetch: refetchRoles } = useQuery({
@@ -312,31 +316,62 @@ function SettingsPage() {
                       placeholder="e.g. Reception, Breakfast..." 
                       className="rounded-xl"
                     />
-                    <div className="flex gap-2">
-                      <Input 
-                        value={newHourValue} 
-                        onChange={e => setNewHourValue(e.target.value)} 
-                        placeholder="e.g. 24 hours, 7:00 - 11:00..." 
-                        className="rounded-xl"
-                      />
+                    <div className="flex gap-2 items-center">
+                      {is24Hours ? (
+                        <Input 
+                          disabled 
+                          value="24 hours" 
+                          className="rounded-xl cursor-not-allowed bg-muted" 
+                        />
+                      ) : (
+                        <div className="flex items-center gap-1.5 w-full">
+                          <Input 
+                            type="time" 
+                            value={timeFrom} 
+                            onChange={e => setTimeFrom(e.target.value)} 
+                            className="rounded-xl w-full" 
+                          />
+                          <span className="text-xs text-muted-foreground">to</span>
+                          <Input 
+                            type="time" 
+                            value={timeTo} 
+                            onChange={e => setTimeTo(e.target.value)} 
+                            className="rounded-xl w-full" 
+                          />
+                        </div>
+                      )}
                       <Button 
                         type="button" 
                         onClick={() => {
-                          if (newHourName.trim() && newHourValue.trim()) {
+                          if (newHourName.trim()) {
+                            const timeVal = is24Hours ? "24 hours" : `${timeFrom} - ${timeTo}`;
                             const current = form.hotelHours || [];
-                            const newItem = `${newHourName.trim()}|${newHourValue.trim()}`;
+                            const newItem = `${newHourName.trim()}|${timeVal}`;
                             if (!current.includes(newItem)) {
                               setForm(f => ({ ...f, hotelHours: [...current, newItem] }));
                             }
                             setNewHourName("");
-                            setNewHourValue("");
+                            setIs24Hours(false);
                           }
                         }}
-                        className="rounded-xl"
+                        className="rounded-xl shrink-0"
                       >
                         Add
                       </Button>
                     </div>
+                  </div>
+                  <div className="flex items-center gap-2 mt-1.5 ml-1">
+                    <Checkbox 
+                      id="is24h-picker" 
+                      checked={is24Hours} 
+                      onCheckedChange={(checked: boolean) => setIs24Hours(!!checked)} 
+                    />
+                    <label 
+                      htmlFor="is24h-picker" 
+                      className="text-xs text-muted-foreground cursor-pointer select-none font-medium"
+                    >
+                      Open 24 Hours
+                    </label>
                   </div>
                   <div className="space-y-1.5 mt-2">
                     {(form.hotelHours || []).map((hourStr, idx) => {

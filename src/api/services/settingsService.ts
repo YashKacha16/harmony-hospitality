@@ -7,6 +7,7 @@ export interface GeneralSettings {
   logoUrl?: string | null;
   logoBackgroundColor?: string | null;
   welcomeImageUrl?: string | null;
+  heroImageUrl?: string | null;
   aboutText?: string | null;
   chefName?: string | null;
   chefDescription?: string | null;
@@ -60,6 +61,17 @@ export const settingsService = {
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch(`${BASE_URL}/api/Settings/welcome-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadHeroImage: async (file: File): Promise<{ heroImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/Settings/hero-image`, {
       method: 'POST',
       body: formData,
     });

@@ -32,6 +32,7 @@ function SettingsPage() {
   const queryClient = useQueryClient();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const welcomeImageRef = useRef<HTMLInputElement>(null);
+  const heroImageRef = useRef<HTMLInputElement>(null);
   const chefImageRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery({
@@ -121,6 +122,18 @@ function SettingsPage() {
     },
   });
 
+  const uploadHeroImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadHeroImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, heroImageUrl: data.heroImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Hero image uploaded successfully");
+    },
+    onError: () => {
+      toast.error("Failed to upload hero image");
+    },
+  });
+
   const createChefMutation = useMutation({
     mutationFn: (data: Chef) => chefService.createChef(data),
     onSuccess: () => {
@@ -178,6 +191,12 @@ function SettingsPage() {
   const handleWelcomeFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       uploadWelcomeImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadHeroImageMutation.mutate(e.target.files[0]);
     }
   };
 
@@ -413,6 +432,23 @@ function SettingsPage() {
                     )}
                   </div>
                   <input type="file" ref={welcomeImageRef} className="hidden" accept="image/*" onChange={handleWelcomeFileChange} />
+                </div>
+                <div>
+                  <Label>Hero Section Background Image</Label>
+                  <div 
+                    className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
+                    onClick={() => heroImageRef.current?.click()}
+                  >
+                    {form.heroImageUrl ? (
+                      <img src={getImageUrl(form.heroImageUrl)} alt="Hero Image" className="h-full object-cover w-full" />
+                    ) : (
+                      <>
+                        <Upload className="size-4" /> 
+                        {uploadHeroImageMutation.isPending ? "Uploading..." : "Upload Hero Image"}
+                      </>
+                    )}
+                  </div>
+                  <input type="file" ref={heroImageRef} className="hidden" accept="image/*" onChange={handleHeroFileChange} />
                 </div>
                 <div>
                   <Label>Address</Label>

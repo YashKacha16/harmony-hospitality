@@ -567,7 +567,7 @@ function AddRoomSheet() {
       capacity: parseInt(capacity) || 2,
       basePrice: parseFloat(price) || 0,
       status,
-      amenities: selectedAmenities,
+      amenities: selectedAmenities.filter(a => hotelAmenities.map(x => x.toLowerCase()).includes(a.toLowerCase())),
       images: images,
       description
     }),
@@ -933,7 +933,7 @@ function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }
       capacity: parseInt(capacity) || 2,
       basePrice: parseFloat(price) || 0,
       status,
-      amenities: selectedAmenities,
+      amenities: selectedAmenities.filter(a => hotelAmenities.map(x => x.toLowerCase()).includes(a.toLowerCase())),
       images: images,
       description
     }),

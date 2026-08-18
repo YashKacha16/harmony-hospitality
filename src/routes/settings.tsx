@@ -40,6 +40,7 @@ function SettingsPage() {
   });
 
   const [form, setForm] = useState<Partial<GeneralSettings>>({});
+  const [newAmenity, setNewAmenity] = useState("");
 
   // Roles State (fetch from backend)
   const { data: roles = [], refetch: refetchRoles } = useQuery({
@@ -243,6 +244,61 @@ function SettingsPage() {
                       placeholder="#070e17"
                       className="rounded-xl font-mono uppercase" 
                     />
+                  </div>
+                </div>
+                <div>
+                  <Label>Hotel Facilities / Amenities</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input 
+                      value={newAmenity} 
+                      onChange={e => setNewAmenity(e.target.value)} 
+                      placeholder="e.g. WiFi, Pool, AC..." 
+                      className="rounded-xl"
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          if (newAmenity.trim()) {
+                            const current = form.hotelAmenities || [];
+                            if (!current.includes(newAmenity.trim())) {
+                              setForm(f => ({ ...f, hotelAmenities: [...current, newAmenity.trim()] }));
+                            }
+                            setNewAmenity("");
+                          }
+                        }
+                      }}
+                    />
+                    <Button 
+                      type="button" 
+                      onClick={() => {
+                        if (newAmenity.trim()) {
+                          const current = form.hotelAmenities || [];
+                          if (!current.includes(newAmenity.trim())) {
+                            setForm(f => ({ ...f, hotelAmenities: [...current, newAmenity.trim()] }));
+                          }
+                          setNewAmenity("");
+                        }
+                      }}
+                      className="rounded-xl"
+                    >
+                      Add
+                    </Button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {(form.hotelAmenities || []).map((amenity) => (
+                      <span 
+                        key={amenity} 
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
+                      >
+                        {amenity}
+                        <button 
+                          type="button" 
+                          onClick={() => setForm(f => ({ ...f, hotelAmenities: (f.hotelAmenities || []).filter(a => a !== amenity) }))}
+                          className="hover:text-destructive transition-colors ml-1"
+                        >
+                          <X className="size-3" />
+                        </button>
+                      </span>
+                    ))}
                   </div>
                 </div>
                 <div>

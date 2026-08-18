@@ -162,6 +162,9 @@ function CategoriesTab() {
 
 function EditCategoryDialog({ category, onClose, currencySymbol }: { category: RoomCategoryDto | null; onClose: () => void; currencySymbol: string }) {
   const queryClient = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ["settings", "general"], queryFn: () => settingsService.getGeneralSettings() });
+  const hotelAmenities = settings?.hotelAmenities || ["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"];
+
   const [form, setForm] = useState({
     name: "", basePrice: 0, currency: "INR", seasonalPricingEnabled: false,
     isActive: true, capacity: undefined as number | undefined, amenities: ""
@@ -215,7 +218,7 @@ function EditCategoryDialog({ category, onClose, currencySymbol }: { category: R
           <div>
             <Label>Amenities</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"].map(a => {
+              {hotelAmenities.map(a => {
                 const currentAmenities = form.amenities.split(',').map(s => s.trim()).filter(Boolean);
                 const isChecked = currentAmenities.includes(a);
                 return (
@@ -259,6 +262,9 @@ function EditCategoryDialog({ category, onClose, currencySymbol }: { category: R
 
 function CreateCategoryDialog({ open, onClose, currencySymbol }: { open: boolean; onClose: () => void; currencySymbol: string }) {
   const queryClient = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ["settings", "general"], queryFn: () => settingsService.getGeneralSettings() });
+  const hotelAmenities = settings?.hotelAmenities || ["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"];
+
   const [form, setForm] = useState({
     name: "", basePrice: 0, currency: "INR", seasonalPricingEnabled: false,
     isActive: true, capacity: undefined as number | undefined, amenities: ""
@@ -297,7 +303,7 @@ function CreateCategoryDialog({ open, onClose, currencySymbol }: { open: boolean
           <div>
             <Label>Amenities</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"].map(a => {
+              {hotelAmenities.map(a => {
                 const currentAmenities = form.amenities.split(',').map(s => s.trim()).filter(Boolean);
                 const isChecked = currentAmenities.includes(a);
                 return (
@@ -509,6 +515,8 @@ function RuleForm({ categoryId, rule, onDone }: { categoryId: number; rule?: Sea
 function AddRoomSheet() {
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const { data: settings } = useQuery({ queryKey: ["settings", "general"], queryFn: () => settingsService.getGeneralSettings() });
+  const hotelAmenities = settings?.hotelAmenities || ["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"];
 
   const { data: categories = [], isFetching } = useQuery({
     queryKey: ["roomCategories"],
@@ -524,7 +532,7 @@ function AddRoomSheet() {
   const selectedCategory = categories.find(c => c.name === selectedCategoryName);
   const maxCapacity = selectedCategory?.capacity;
 
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
   const [capacity, setCapacity] = useState<string>("");
   const [price, setPrice] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
@@ -536,12 +544,12 @@ function AddRoomSheet() {
       setDescription("");
       setStatus("Available");
       setSelectedCategoryName("");
-      setSelectedAmenities(["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"]);
+      setSelectedAmenities(hotelAmenities);
       setCapacity("");
       setPrice("");
       setImages([]);
     }
-  }, [open]);
+  }, [open, hotelAmenities]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -607,7 +615,7 @@ function AddRoomSheet() {
           <div>
             <Label>Amenities</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"].map(a => {
+              {hotelAmenities.map(a => {
                 const categoryAmenities = selectedCategory ? (selectedCategory.amenities || "").split(',').map(s => s.trim()).filter(Boolean) : null;
                 const isAvailable = categoryAmenities === null || categoryAmenities.includes(a);
                 const isChecked = selectedAmenities.includes(a);
@@ -899,6 +907,8 @@ function InventoryTab({ view }: { view: "grid" | "table" }) {
 
 function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }) {
   const queryClient = useQueryClient();
+  const { data: settings } = useQuery({ queryKey: ["settings", "general"], queryFn: () => settingsService.getGeneralSettings() });
+  const hotelAmenities = settings?.hotelAmenities || ["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"];
   const { data: categories = [] } = useQuery({ queryKey: ["roomCategories"], queryFn: () => roomCategoryService.getAll() });
 
   const [number, setNumber] = useState(room.number);
@@ -979,7 +989,7 @@ function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }
           <div>
             <Label>Amenities</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {["WiFi", "AC", "TV", "Balcony", "Minibar", "Bathtub"].map(a => {
+              {hotelAmenities.map(a => {
                 const catAmenities = selectedCategory ? (selectedCategory.amenities || "") : (room.category?.amenities || "");
                 const categoryAmenities = catAmenities.split(',').map(s => s.trim()).filter(Boolean);
                 const isAvailable = categoryAmenities.length === 0 || categoryAmenities.includes(a);

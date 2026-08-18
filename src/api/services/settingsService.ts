@@ -25,6 +25,7 @@ export interface GeneralSettings {
   cancellation3To6DaysRefundPercent?: number;
   cancellationWithin48HoursRefundPercent?: number;
   extraBedPrice?: number;
+  hotelAmenities?: string[];
 }
 
 export const settingsService = {

@@ -551,13 +551,7 @@ function AddRoomSheet() {
     }
   }, [open, hotelAmenities]);
 
-  useEffect(() => {
-    if (selectedCategory) {
-      setSelectedAmenities((selectedCategory.amenities || "").split(',').map(s => s.trim()).filter(Boolean));
-      if (selectedCategory.capacity) setCapacity(selectedCategory.capacity.toString());
-      if (selectedCategory.basePrice !== undefined) setPrice(selectedCategory.basePrice.toString());
-    }
-  }, [selectedCategory]);
+
 
   const createMutation = useMutation({
     mutationFn: () => roomService.create({
@@ -597,7 +591,19 @@ function AddRoomSheet() {
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Category</Label>
-              <Select disabled={isFetching} value={selectedCategoryName} onValueChange={setSelectedCategoryName}>
+              <Select 
+                disabled={isFetching} 
+                value={selectedCategoryName} 
+                onValueChange={(val) => {
+                  setSelectedCategoryName(val);
+                  const cat = categories.find(c => c.name === val);
+                  if (cat) {
+                    setSelectedAmenities((cat.amenities || "").split(',').map(s => s.trim()).filter(Boolean));
+                    if (cat.capacity) setCapacity(cat.capacity.toString());
+                    if (cat.basePrice !== undefined) setPrice(cat.basePrice.toString());
+                  }
+                }}
+              >
                 <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder={isFetching ? "Select" : "Select"} /></SelectTrigger>
                 <SelectContent>
                   {categories.map(c => (
@@ -960,7 +966,18 @@ function EditRoomSheet({ room, onClose }: { room: RoomDto, onClose: () => void }
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div><Label>Category</Label>
-              <Select value={selectedCategoryName} onValueChange={setSelectedCategoryName}>
+              <Select 
+                value={selectedCategoryName} 
+                onValueChange={(val) => {
+                  setSelectedCategoryName(val);
+                  const cat = categories.find(c => c.name === val);
+                  if (cat) {
+                    setSelectedAmenities((cat.amenities || "").split(',').map(s => s.trim()).filter(Boolean));
+                    if (cat.capacity) setCapacity(cat.capacity.toString());
+                    if (cat.basePrice !== undefined) setPrice(cat.basePrice.toString());
+                  }
+                }}
+              >
                 <SelectTrigger className="rounded-xl mt-1"><SelectValue placeholder="Select" /></SelectTrigger>
                 <SelectContent>
                   {categories.map(c => <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>)}

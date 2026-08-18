@@ -41,6 +41,8 @@ function SettingsPage() {
 
   const [form, setForm] = useState<Partial<GeneralSettings>>({});
   const [newAmenity, setNewAmenity] = useState("");
+  const [newHourName, setNewHourName] = useState("");
+  const [newHourValue, setNewHourValue] = useState("");
 
   // Roles State (fetch from backend)
   const { data: roles = [], refetch: refetchRoles } = useQuery({
@@ -299,6 +301,61 @@ function SettingsPage() {
                         </button>
                       </span>
                     ))}
+                  </div>
+                </div>
+                <div>
+                  <Label>Opening / Dining Hours</Label>
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <Input 
+                      value={newHourName} 
+                      onChange={e => setNewHourName(e.target.value)} 
+                      placeholder="e.g. Reception, Breakfast..." 
+                      className="rounded-xl"
+                    />
+                    <div className="flex gap-2">
+                      <Input 
+                        value={newHourValue} 
+                        onChange={e => setNewHourValue(e.target.value)} 
+                        placeholder="e.g. 24 hours, 7:00 - 11:00..." 
+                        className="rounded-xl"
+                      />
+                      <Button 
+                        type="button" 
+                        onClick={() => {
+                          if (newHourName.trim() && newHourValue.trim()) {
+                            const current = form.hotelHours || [];
+                            const newItem = `${newHourName.trim()}|${newHourValue.trim()}`;
+                            if (!current.includes(newItem)) {
+                              setForm(f => ({ ...f, hotelHours: [...current, newItem] }));
+                            }
+                            setNewHourName("");
+                            setNewHourValue("");
+                          }
+                        }}
+                        className="rounded-xl"
+                      >
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-1.5 mt-2">
+                    {(form.hotelHours || []).map((hourStr, idx) => {
+                      const parts = hourStr.split('|');
+                      const name = parts[0] || "";
+                      const val = parts[1] || "";
+                      return (
+                        <div key={idx} className="flex justify-between items-center bg-muted/30 px-3 py-1.5 rounded-xl border text-sm">
+                          <span><strong>{name}</strong>: {val}</span>
+                          <button 
+                            type="button" 
+                            onClick={() => setForm(f => ({ ...f, hotelHours: (f.hotelHours || []).filter((_, i) => i !== idx) }))}
+                            className="text-muted-foreground hover:text-destructive transition-colors"
+                          >
+                            <Trash2 className="size-4" />
+                          </button>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
                 <div>

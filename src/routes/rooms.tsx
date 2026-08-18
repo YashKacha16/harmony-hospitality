@@ -681,6 +681,47 @@ function AddRoomSheet() {
   );
 }
 
+function RoomImageSlider({ images, alt }: { images: string[]; alt: string }) {
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  useEffect(() => {
+    if (!images || images.length <= 1) return;
+    const interval = setInterval(() => {
+      setCurrentIndex((prevIndex) => (prevIndex + 1) % images.length);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, [images]);
+
+  if (!images || images.length === 0) return null;
+
+  return (
+    <div className="relative w-full h-full overflow-hidden">
+      {images.map((img, index) => (
+        <img
+          key={index}
+          src={img}
+          alt={`${alt} - ${index}`}
+          className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-1000 ${
+            index === currentIndex ? "opacity-100" : "opacity-0 pointer-events-none"
+          }`}
+        />
+      ))}
+      {images.length > 1 && (
+        <div className="absolute bottom-2 inset-x-0 flex justify-center gap-1.5 z-10">
+          {images.map((_, index) => (
+            <span
+              key={index}
+              className={`size-1.5 rounded-full transition-all ${
+                index === currentIndex ? "bg-white w-3" : "bg-white/50"
+              }`}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Inventory Tab ─────────────────────────────────────────────
 
 function InventoryTab({ view }: { view: "grid" | "table" }) {
@@ -760,12 +801,11 @@ function InventoryTab({ view }: { view: "grid" | "table" }) {
       {filteredRooms.length > 0 && view === "grid" && (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {filteredRooms.map((r: RoomDto) => {
-            console.log("Room", r.number, "images:", r.images ? r.images.length : 0, r.images && r.images.length > 0 ? r.images[0].substring(0, 50) : "none");
             return (
             <Card key={r.id} className="p-4 rounded-2xl hover:border-primary/30 transition-colors flex flex-col overflow-hidden">
-              {r.images && r.images.length > 0 && r.images[0].startsWith('data:') && (
-                <div className="h-32 -mx-4 -mt-4 mb-3 bg-muted flex items-center justify-center overflow-hidden">
-                  <img src={r.images[0]} alt={r.number} className="w-full h-full object-cover" />
+              {r.images && r.images.length > 0 && (
+                <div className="h-32 -mx-4 -mt-4 mb-3 bg-muted flex items-center justify-center overflow-hidden relative">
+                  <RoomImageSlider images={r.images} alt={r.number} />
                 </div>
               )}
               <div className="flex justify-between items-start mb-2">

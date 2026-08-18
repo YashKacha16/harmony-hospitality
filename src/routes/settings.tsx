@@ -309,37 +309,54 @@ function SettingsPage() {
                 </div>
                 <div>
                   <Label>Opening / Dining Hours</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <Input 
-                      value={newHourName} 
-                      onChange={e => setNewHourName(e.target.value)} 
-                      placeholder="e.g. Reception, Breakfast..." 
-                      className="rounded-xl"
-                    />
-                    <div className="flex gap-2 items-center">
-                      {is24Hours ? (
-                        <Input 
-                          disabled 
-                          value="24 hours" 
-                          className="rounded-xl cursor-not-allowed bg-muted" 
+                  <div className="flex flex-col gap-2.5 mt-1.5 p-3.5 rounded-xl border bg-muted/20">
+                    <div className="flex gap-4 items-center justify-between">
+                      <Input 
+                        value={newHourName} 
+                        onChange={e => setNewHourName(e.target.value)} 
+                        placeholder="e.g. Reception, Breakfast..." 
+                        className="rounded-xl flex-1"
+                      />
+                      <div className="flex items-center gap-2 shrink-0 select-none">
+                        <Checkbox 
+                          id="is24h-picker" 
+                          checked={is24Hours} 
+                          onCheckedChange={(checked: boolean) => setIs24Hours(!!checked)} 
                         />
-                      ) : (
-                        <div className="flex items-center gap-1.5 w-full">
+                        <label 
+                          htmlFor="is24h-picker" 
+                          className="text-xs text-muted-foreground cursor-pointer font-medium whitespace-nowrap"
+                        >
+                          Open 24 Hours
+                        </label>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex-1 flex items-center gap-2">
+                        {is24Hours ? (
                           <Input 
-                            type="time" 
-                            value={timeFrom} 
-                            onChange={e => setTimeFrom(e.target.value)} 
-                            className="rounded-xl w-full" 
+                            disabled 
+                            value="24 hours" 
+                            className="rounded-xl cursor-not-allowed bg-muted w-full" 
                           />
-                          <span className="text-xs text-muted-foreground">to</span>
-                          <Input 
-                            type="time" 
-                            value={timeTo} 
-                            onChange={e => setTimeTo(e.target.value)} 
-                            className="rounded-xl w-full" 
-                          />
-                        </div>
-                      )}
+                        ) : (
+                          <div className="flex items-center gap-2 w-full">
+                            <Input 
+                              type="time" 
+                              value={timeFrom} 
+                              onChange={e => setTimeFrom(e.target.value)} 
+                              className="rounded-xl w-full" 
+                            />
+                            <span className="text-xs text-muted-foreground shrink-0">to</span>
+                            <Input 
+                              type="time" 
+                              value={timeTo} 
+                              onChange={e => setTimeTo(e.target.value)} 
+                              className="rounded-xl w-full" 
+                            />
+                          </div>
+                        )}
+                      </div>
                       <Button 
                         type="button" 
                         onClick={() => {
@@ -356,22 +373,9 @@ function SettingsPage() {
                         }}
                         className="rounded-xl shrink-0"
                       >
-                        Add
+                        Add Slot
                       </Button>
                     </div>
-                  </div>
-                  <div className="flex items-center gap-2 mt-1.5 ml-1">
-                    <Checkbox 
-                      id="is24h-picker" 
-                      checked={is24Hours} 
-                      onCheckedChange={(checked: boolean) => setIs24Hours(!!checked)} 
-                    />
-                    <label 
-                      htmlFor="is24h-picker" 
-                      className="text-xs text-muted-foreground cursor-pointer select-none font-medium"
-                    >
-                      Open 24 Hours
-                    </label>
                   </div>
                   <div className="space-y-1.5 mt-2">
                     {(form.hotelHours || []).map((hourStr, idx) => {

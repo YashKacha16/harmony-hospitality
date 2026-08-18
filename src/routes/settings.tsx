@@ -9,7 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Upload, Shield, Lock, Plus, Trash2 } from "lucide-react";
+import { Upload, Shield, Lock, Plus, Trash2, X } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { permissionService, RoleConfig, RolePermissions, PagePermission } from "@/lib/permissionService";
 import { toast } from "sonner";

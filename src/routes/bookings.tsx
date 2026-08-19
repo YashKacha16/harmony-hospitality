@@ -11,6 +11,7 @@ import { ReservationsTab } from "@/components/bookings/ReservationsTab";
 import { ActiveGuestsTab } from "@/components/bookings/ActiveGuestsTab";
 import { CancellationsTab } from "@/components/bookings/CancellationsTab";
 import { NoShowsTab } from "@/components/bookings/NoShowsTab";
+import { CompletedStaysTab } from "@/components/bookings/CompletedStaysTab";
 import { NewCheckInDrawer } from "@/components/bookings/NewCheckInDrawer";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -45,6 +46,11 @@ function BookingsPage() {
   const { data: activeGuests = [] } = useQuery({
     queryKey: ["bookings", "Checked-in"],
     queryFn: () => bookingService.getAll("Checked-in"),
+  });
+
+  const { data: completedStays = [] } = useQuery({
+    queryKey: ["bookings", "Completed"],
+    queryFn: () => bookingService.getAll("Completed"),
   });
 
   const noShowMutation = useMutation({
@@ -107,6 +113,7 @@ function BookingsPage() {
               </TabsTrigger>
               <TabsTrigger value="cancellations">Cancellations & Refunds</TabsTrigger>
               <TabsTrigger value="noshows">No-Shows</TabsTrigger>
+              <TabsTrigger value="completed">Completed Stays</TabsTrigger>
             </TabsList>
             {canAdd && <NewCheckInDrawer />}
           </div>
@@ -129,6 +136,9 @@ function BookingsPage() {
           </TabsContent>
           <TabsContent value="noshows" className="flex-1 overflow-auto m-0 p-0">
             <NoShowsTab />
+          </TabsContent>
+          <TabsContent value="completed" className="flex-1 overflow-auto m-0 p-0">
+            <CompletedStaysTab bookings={completedStays} currency={currency} />
           </TabsContent>
         </Tabs>
       </div>

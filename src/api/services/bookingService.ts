@@ -21,8 +21,9 @@ export interface BookingDto {
   status: string;
   forfeitedAmount?: number;
   refundAmount?: number;
-  refundMethod: string;
-  refundStatus: string;
+  refundMethod?: string;
+  refundStatus?: string;
+  totalPaidAmount?: number;
 }
 
 export const bookingService = {

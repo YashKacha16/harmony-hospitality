@@ -328,7 +328,6 @@ function SettingsPage() {
           <TabsTrigger value="policy" className="rounded-lg">Cancellation policy</TabsTrigger>
 
           <TabsTrigger value="roles" className="rounded-lg">Roles & permissions</TabsTrigger>
-          <TabsTrigger value="gallery" className="rounded-lg">Gallery</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-6 outline-none">
@@ -595,6 +594,103 @@ function SettingsPage() {
                           );
                         })}
                       </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Gallery Management Card */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <ImageIcon className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-base font-semibold">Gallery Management</h3>
+                      <p className="text-[11px] text-muted-foreground">Add and manage photos shown on the guest gallery page.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid md:grid-cols-12 gap-6">
+                    {/* Add Photo Form */}
+                    <div className="md:col-span-4 space-y-3.5 md:border-r md:border-border/40 md:pr-6">
+                      <Label className="text-xs uppercase tracking-wider font-semibold">Add New Photo</Label>
+                      
+                      <div className="space-y-1">
+                        <Label htmlFor="gallery-file" className="text-xs text-muted-foreground">Select Image</Label>
+                        <Input 
+                          id="gallery-file"
+                          type="file" 
+                          accept="image/*" 
+                          onChange={e => setGalleryFile(e.target.files?.[0] || null)}
+                          className="rounded-xl bg-background/50 focus-visible:bg-background text-xs cursor-pointer"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <Label htmlFor="gallery-desc" className="text-xs text-muted-foreground">Description</Label>
+                        <Textarea 
+                          id="gallery-desc"
+                          value={galleryDesc} 
+                          onChange={e => setGalleryDesc(e.target.value)} 
+                          placeholder="Cozy fireplace, ocean view suite, etc..." 
+                          className="rounded-xl bg-background/50 focus-visible:bg-background text-xs h-20"
+                        />
+                      </div>
+
+                      <Button 
+                        onClick={() => createGalleryMutation.mutate({ desc: galleryDesc, file: galleryFile })} 
+                        disabled={!galleryFile || createGalleryMutation.isPending} 
+                        className="w-full rounded-xl bg-gold text-gold-foreground hover:bg-gold/90 font-semibold text-xs"
+                      >
+                        {createGalleryMutation.isPending ? (
+                          <>
+                            <Loader2 className="size-3 animate-spin mr-1.5" />
+                            Uploading...
+                          </>
+                        ) : "Upload to Gallery"}
+                      </Button>
+                    </div>
+
+                    {/* Existing Gallery Photos */}
+                    <div className="md:col-span-8 space-y-3.5">
+                      <Label className="text-xs uppercase tracking-wider font-semibold">Uploaded Photos ({galleryItems.length})</Label>
+                      
+                      {galleryItems.length === 0 ? (
+                        <div className="h-40 rounded-xl border border-dashed border-border/60 flex items-center justify-center text-xs text-muted-foreground bg-background/20">
+                          No images uploaded yet.
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-[300px] overflow-y-auto pr-1">
+                          {galleryItems.map((item) => (
+                            <Card key={item.id} className="overflow-hidden group relative border border-border/40 bg-background/40">
+                              {item.imageUrl ? (
+                                <img 
+                                  src={item.imageUrl.startsWith('http') ? item.imageUrl : (item.imageUrl.includes('/attachments') ? getImageUrl(item.imageUrl) : getImageUrl(`/attachments/gallery/${item.imageUrl}`))} 
+                                  alt={item.description || "Gallery"} 
+                                  className="w-full h-24 object-cover" 
+                                />
+                              ) : (
+                                <div className="w-full h-24 bg-muted flex items-center justify-center text-[10px]">No Image</div>
+                              )}
+                              <div className="p-2 text-[10px] truncate" title={item.description || ""}>
+                                {item.description || <span className="text-muted-foreground italic">No description</span>}
+                              </div>
+                              <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button 
+                                  size="icon" 
+                                  variant="destructive" 
+                                  className="h-6 w-6 rounded-md" 
+                                  onClick={() => {
+                                    if(confirm("Delete this photo?")) deleteGalleryMutation.mutate(item.id!);
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </Card>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -1345,48 +1441,6 @@ function SettingsPage() {
               )}
             </Card>
           </div>
-        </TabsContent>
-        <TabsContent value="gallery">
-          <Card className="p-6 rounded-2xl">
-            <h2 className="font-serif text-2xl mb-4">Gallery Management</h2>
-            <div className="grid md:grid-cols-2 gap-6 mb-8 border-b pb-8">
-              <div className="space-y-4">
-                <Label>Add New Photo</Label>
-                <div className="space-y-2">
-                  <Input type="file" accept="image/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} />
-                </div>
-                <div className="space-y-2">
-                  <Label>Description</Label>
-                  <Textarea value={galleryDesc} onChange={e => setGalleryDesc(e.target.value)} placeholder="Image description..." />
-                </div>
-                <Button onClick={() => createGalleryMutation.mutate({ desc: galleryDesc, file: galleryFile })} disabled={!galleryFile || createGalleryMutation.isPending} className="bg-gold text-gold-foreground hover:bg-gold/90">
-                  {createGalleryMutation.isPending ? "Uploading..." : "Upload to Gallery"}
-                </Button>
-              </div>
-            </div>
-            
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {galleryItems.map((item) => (
-                <Card key={item.id} className="overflow-hidden group relative">
-                  {item.imageUrl ? (
-                    <img src={item.imageUrl.startsWith('http') ? item.imageUrl : (item.imageUrl.includes('/attachments') ? getImageUrl(item.imageUrl) : getImageUrl(`/attachments/gallery/${item.imageUrl}`))} alt={item.description || "Gallery"} className="w-full h-40 object-cover" />
-                  ) : (
-                    <div className="w-full h-40 bg-muted flex items-center justify-center">No Image</div>
-                  )}
-                  <div className="p-3 text-sm">
-                    {item.description || <span className="text-muted-foreground italic">No description</span>}
-                  </div>
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => {
-                      if(confirm("Delete this photo?")) deleteGalleryMutation.mutate(item.id!);
-                    }}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Card>
         </TabsContent>
       </Tabs>
 

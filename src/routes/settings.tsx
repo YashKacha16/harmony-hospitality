@@ -10,7 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Upload, Shield, Lock, Plus, Trash2, X } from "lucide-react";
+import { Upload, Shield, Lock, Plus, Trash2, X, Building2, Image as ImageIcon, Clock, Coins, Check, Loader2, Users, MapPin, Mail, Phone, Sliders } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { permissionService, RoleConfig, RolePermissions, PagePermission } from "@/lib/permissionService";
 import { toast } from "sonner";
@@ -246,281 +246,517 @@ function SettingsPage() {
           <TabsTrigger value="gallery" className="rounded-lg">Gallery</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="general" className="grid md:grid-cols-2 gap-4">
-          <Card className="p-6 rounded-2xl space-y-3">
-            <div className="font-serif text-lg">Property</div>
-            {isLoading ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-10 bg-muted rounded-xl"></div>
-                <div className="h-20 bg-muted rounded-xl"></div>
-                <div className="h-20 bg-muted rounded-xl"></div>
-                <div className="h-10 bg-muted rounded-xl"></div>
+        <TabsContent value="general" className="space-y-6 outline-none">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-card/20 backdrop-blur-sm border border-border/40 p-5 rounded-2xl">
+            <div>
+              <h2 className="font-serif text-2xl font-semibold text-foreground flex items-center gap-2">
+                General Settings
+              </h2>
+              <p className="text-xs text-muted-foreground mt-0.5">Manage your property details, branding, taxes, and operations.</p>
+            </div>
+            <Button 
+              disabled={updateMutation.isPending}
+              onClick={handleSave}
+              className="rounded-xl bg-gold text-gold-foreground hover:bg-gold/90 px-6 font-medium shadow-md flex items-center gap-2 shrink-0 self-start sm:self-auto transition-transform hover:scale-[1.02]"
+            >
+              {updateMutation.isPending ? (
+                <>
+                  <Loader2 className="size-4 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="size-4" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+
+          {isLoading ? (
+            <div className="animate-pulse grid grid-cols-1 lg:grid-cols-12 gap-6">
+              <div className="lg:col-span-8 space-y-6">
+                <div className="h-[300px] bg-muted rounded-2xl"></div>
+                <div className="h-[250px] bg-muted rounded-2xl"></div>
               </div>
-            ) : (
-              <>
-                <div>
-                  <Label>Hotel / restaurant name</Label>
-                  <Input 
-                    value={form.name || ""} 
-                    onChange={e => setForm(f => ({...f, name: e.target.value}))}
-                    className="rounded-xl mt-1" 
-                  />
-                </div>
-                <div>
-                  <Label>Logo</Label>
-                  <div 
-                    className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
-                    onClick={() => fileInputRef.current?.click()}
-                  >
-                    {form.logoUrl ? (
-                      <img src={getImageUrl(form.logoUrl)} alt="Logo" className="h-full object-contain" />
-                    ) : (
-                      <>
-                        <Upload className="size-4" /> 
-                        {uploadLogoMutation.isPending ? "Uploading..." : "Upload Logo"}
-                      </>
-                    )}
+              <div className="lg:col-span-4 space-y-6">
+                <div className="h-[280px] bg-muted rounded-2xl"></div>
+                <div className="h-[200px] bg-muted rounded-2xl"></div>
+              </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Left Column */}
+              <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+                {/* Card 1: Property Profile */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Building2 className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-base font-semibold">Property Profile</h3>
+                      <p className="text-[11px] text-muted-foreground">Core details and contact information of your business.</p>
+                    </div>
                   </div>
-                  <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
-                </div>
-                <div>
-                  <Label>Logo Background Color</Label>
-                  <div className="flex gap-2 items-center mt-1">
-                    <Input 
-                      type="color" 
-                      value={form.logoBackgroundColor || "#070e17"} 
-                      onChange={e => setForm(f => ({...f, logoBackgroundColor: e.target.value}))}
-                      className="size-10 p-1 rounded-xl cursor-pointer shrink-0 border-0" 
-                    />
-                    <Input 
-                      type="text" 
-                      value={form.logoBackgroundColor || "#070e17"} 
-                      onChange={e => setForm(f => ({...f, logoBackgroundColor: e.target.value}))}
-                      placeholder="#070e17"
-                      className="rounded-xl font-mono uppercase" 
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Hotel Facilities / Amenities</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input 
-                      value={newAmenity} 
-                      onChange={e => setNewAmenity(e.target.value)} 
-                      placeholder="e.g. WiFi, Pool, AC..." 
-                      className="rounded-xl"
-                      onKeyDown={e => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          if (newAmenity.trim()) {
-                            const current = form.hotelAmenities || [];
-                            if (!current.includes(newAmenity.trim())) {
-                              setForm(f => ({ ...f, hotelAmenities: [...current, newAmenity.trim()] }));
-                            }
-                            setNewAmenity("");
-                          }
-                        }
-                      }}
-                    />
-                    <Button 
-                      type="button" 
-                      onClick={() => {
-                        if (newAmenity.trim()) {
-                          const current = form.hotelAmenities || [];
-                          if (!current.includes(newAmenity.trim())) {
-                            setForm(f => ({ ...f, hotelAmenities: [...current, newAmenity.trim()] }));
-                          }
-                          setNewAmenity("");
-                        }
-                      }}
-                      className="rounded-xl"
-                    >
-                      Add
-                    </Button>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5 mt-2">
-                    {(form.hotelAmenities || []).map((amenity) => (
-                      <span 
-                        key={amenity} 
-                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
-                      >
-                        {amenity}
-                        <button 
-                          type="button" 
-                          onClick={() => setForm(f => ({ ...f, hotelAmenities: (f.hotelAmenities || []).filter(a => a !== amenity) }))}
-                          className="hover:text-destructive transition-colors ml-1"
-                        >
-                          <X className="size-3" />
-                        </button>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <Label>Opening / Dining Hours</Label>
-                  <div className="flex flex-col gap-2.5 mt-1.5 p-3.5 rounded-xl border bg-muted/20">
-                    <div className="flex gap-4 items-center justify-between">
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Hotel / restaurant name</Label>
                       <Input 
-                        value={newHourName} 
-                        onChange={e => setNewHourName(e.target.value)} 
-                        placeholder="e.g. Reception, Breakfast..." 
-                        className="rounded-xl flex-1"
+                        value={form.name || ""} 
+                        onChange={e => setForm(f => ({...f, name: e.target.value}))}
+                        className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
                       />
-                      <div className="flex items-center gap-2 shrink-0 select-none">
-                        <Checkbox 
-                          id="is24h-picker" 
-                          checked={is24Hours} 
-                          onCheckedChange={(checked: boolean) => setIs24Hours(!!checked)} 
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div>
+                        <Label>Phone</Label>
+                        <Input 
+                          value={form.phone || ""} 
+                          onChange={e => setForm(f => ({...f, phone: e.target.value}))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
                         />
-                        <label 
-                          htmlFor="is24h-picker" 
-                          className="text-xs text-muted-foreground cursor-pointer font-medium whitespace-nowrap"
-                        >
-                          Open 24 Hours
-                        </label>
+                      </div>
+                      <div>
+                        <Label>Email</Label>
+                        <Input 
+                          value={form.email || ""} 
+                          onChange={e => setForm(f => ({...f, email: e.target.value}))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        />
                       </div>
                     </div>
-                    <div className="flex items-center justify-between gap-3">
-                      <div className="flex-1 flex items-center gap-2">
-                        {is24Hours ? (
+
+                    <div>
+                      <Label>Address</Label>
+                      <Textarea 
+                        value={form.address || ""} 
+                        onChange={e => setForm(f => ({...f, address: e.target.value}))}
+                        className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background min-h-[70px]" 
+                      />
+                    </div>
+
+                    <div>
+                      <Label>About us description (Multiline support)</Label>
+                      <Textarea 
+                        value={form.aboutText || ""} 
+                        onChange={e => setForm(f => ({...f, aboutText: e.target.value}))}
+                        className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background min-h-[100px]" 
+                        placeholder="Enter details of your hotel, history, and experience..."
+                      />
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Card 2: Facilities & Hours */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Clock className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-base font-semibold">Facilities & Operations</h3>
+                      <p className="text-[11px] text-muted-foreground">Manage service hours and available amenities.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-5">
+                    <div>
+                      <Label>Hotel Facilities / Amenities</Label>
+                      <div className="flex gap-2 mt-1.5">
+                        <Input 
+                          value={newAmenity} 
+                          onChange={e => setNewAmenity(e.target.value)} 
+                          placeholder="e.g. WiFi, Pool, AC..." 
+                          className="rounded-xl bg-background/50 focus-visible:bg-background"
+                          onKeyDown={e => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              if (newAmenity.trim()) {
+                                const current = form.hotelAmenities || [];
+                                if (!current.includes(newAmenity.trim())) {
+                                  setForm(f => ({ ...f, hotelAmenities: [...current, newAmenity.trim()] }));
+                                }
+                                setNewAmenity("");
+                              }
+                            }
+                          }}
+                        />
+                        <Button 
+                          type="button" 
+                          onClick={() => {
+                            if (newAmenity.trim()) {
+                              const current = form.hotelAmenities || [];
+                              if (!current.includes(newAmenity.trim())) {
+                                setForm(f => ({ ...f, hotelAmenities: [...current, newAmenity.trim()] }));
+                              }
+                              setNewAmenity("");
+                            }
+                          }}
+                          className="rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {(form.hotelAmenities || []).map((amenity) => (
+                          <span 
+                            key={amenity} 
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
+                          >
+                            {amenity}
+                            <button 
+                              type="button" 
+                              onClick={() => setForm(f => ({ ...f, hotelAmenities: (f.hotelAmenities || []).filter(a => a !== amenity) }))}
+                              className="hover:text-destructive transition-colors ml-1"
+                            >
+                              <X className="size-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Opening / Dining Hours</Label>
+                      <div className="flex flex-col gap-2.5 mt-1.5 p-4 rounded-xl border border-border/40 bg-muted/20">
+                        <div className="flex gap-4 items-center justify-between">
                           <Input 
-                            disabled 
-                            value="24 hours" 
-                            className="rounded-xl cursor-not-allowed bg-muted w-full" 
+                            value={newHourName} 
+                            onChange={e => setNewHourName(e.target.value)} 
+                            placeholder="e.g. Reception, Breakfast..." 
+                            className="rounded-xl flex-1 bg-background/50 focus-visible:bg-background"
                           />
-                        ) : (
-                          <div className="flex items-center gap-2 w-full">
-                            <Input 
-                              type="time" 
-                              value={timeFrom} 
-                              onChange={e => setTimeFrom(e.target.value)} 
-                              className="rounded-xl w-full" 
+                          <div className="flex items-center gap-2 shrink-0 select-none">
+                            <Checkbox 
+                              id="is24h-picker" 
+                              checked={is24Hours} 
+                              onCheckedChange={(checked: boolean) => setIs24Hours(!!checked)} 
                             />
-                            <span className="text-xs text-muted-foreground shrink-0">to</span>
-                            <Input 
-                              type="time" 
-                              value={timeTo} 
-                              onChange={e => setTimeTo(e.target.value)} 
-                              className="rounded-xl w-full" 
-                            />
+                            <label 
+                              htmlFor="is24h-picker" 
+                              className="text-xs text-muted-foreground cursor-pointer font-medium whitespace-nowrap"
+                            >
+                              Open 24 Hours
+                            </label>
                           </div>
+                        </div>
+
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex-1 flex items-center gap-2">
+                            {is24Hours ? (
+                              <Input 
+                                disabled 
+                                value="24 hours" 
+                                className="rounded-xl cursor-not-allowed bg-muted/50 w-full" 
+                              />
+                            ) : (
+                              <div className="flex items-center gap-2 w-full">
+                                <Input 
+                                  type="time" 
+                                  value={timeFrom} 
+                                  onChange={e => setTimeFrom(e.target.value)} 
+                                  className="rounded-xl w-full bg-background/50 focus-visible:bg-background" 
+                                />
+                                <span className="text-xs text-muted-foreground shrink-0">to</span>
+                                <Input 
+                                  type="time" 
+                                  value={timeTo} 
+                                  onChange={e => setTimeTo(e.target.value)} 
+                                  className="rounded-xl w-full bg-background/50 focus-visible:bg-background" 
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <Button 
+                            type="button" 
+                            onClick={() => {
+                              if (newHourName.trim()) {
+                                const timeVal = is24Hours ? "24 hours" : `${timeFrom} - ${timeTo}`;
+                                const current = form.hotelHours || [];
+                                const newItem = `${newHourName.trim()}|${timeVal}`;
+                                if (!current.includes(newItem)) {
+                                  setForm(f => ({ ...f, hotelHours: [...current, newItem] }));
+                                }
+                                setNewHourName("");
+                                setIs24Hours(false);
+                              }
+                            }}
+                            className="rounded-xl shrink-0 bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                          >
+                            Add Slot
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 mt-3">
+                        {(form.hotelHours || []).map((hourStr, idx) => {
+                          const parts = hourStr.split('|');
+                          const name = parts[0] || "";
+                          const val = parts[1] || "";
+                          return (
+                            <div key={idx} className="flex justify-between items-center bg-muted/20 px-4 py-2 rounded-xl border border-border/40 text-sm">
+                              <span><strong>{name}</strong>: {val}</span>
+                              <button 
+                                type="button" 
+                                onClick={() => setForm(f => ({ ...f, hotelHours: (f.hotelHours || []).filter((_, i) => i !== idx) }))}
+                                className="text-muted-foreground hover:text-destructive transition-colors p-1"
+                              >
+                                <Trash2 className="size-4" />
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Right Column */}
+              <div className="lg:col-span-5 xl:col-span-4 space-y-6">
+                {/* Card 3: Brand Identity */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <ImageIcon className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-base font-semibold">Brand Identity</h3>
+                      <p className="text-[11px] text-muted-foreground">Property branding assets and colors.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Logo</Label>
+                      <div 
+                        className="mt-1.5 h-24 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        {form.logoUrl ? (
+                          <>
+                            <img src={getImageUrl(form.logoUrl)} alt="Logo" className="h-full object-contain p-2" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md">Change Logo</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-4 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadLogoMutation.isPending ? "Uploading..." : "Upload Logo"}</span>
+                          </>
                         )}
                       </div>
-                      <Button 
-                        type="button" 
-                        onClick={() => {
-                          if (newHourName.trim()) {
-                            const timeVal = is24Hours ? "24 hours" : `${timeFrom} - ${timeTo}`;
-                            const current = form.hotelHours || [];
-                            const newItem = `${newHourName.trim()}|${timeVal}`;
-                            if (!current.includes(newItem)) {
-                              setForm(f => ({ ...f, hotelHours: [...current, newItem] }));
-                            }
-                            setNewHourName("");
-                            setIs24Hours(false);
-                          }
-                        }}
-                        className="rounded-xl shrink-0"
+                      <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
+                    </div>
+
+                    <div>
+                      <Label>Logo Background Color</Label>
+                      <div className="flex gap-2 items-center mt-1.5">
+                        <Input 
+                          type="color" 
+                          value={form.logoBackgroundColor || "#070e17"} 
+                          onChange={e => setForm(f => ({...f, logoBackgroundColor: e.target.value}))}
+                          className="size-10 p-1 rounded-xl cursor-pointer shrink-0 border-0 bg-transparent" 
+                        />
+                        <Input 
+                          type="text" 
+                          value={form.logoBackgroundColor || "#070e17"} 
+                          onChange={e => setForm(f => ({...f, logoBackgroundColor: e.target.value}))}
+                          placeholder="#070e17"
+                          className="rounded-xl font-mono uppercase bg-background/50 focus-visible:bg-background" 
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Welcome Section Background Image</Label>
+                      <div 
+                        className="mt-1.5 h-24 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => welcomeImageRef.current?.click()}
                       >
-                        Add Slot
-                      </Button>
+                        {form.welcomeImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.welcomeImageUrl)} alt="Welcome Image" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md">Change Image</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-4 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadWelcomeImageMutation.isPending ? "Uploading..." : "Upload Welcome Image"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={welcomeImageRef} className="hidden" accept="image/*" onChange={handleWelcomeFileChange} />
+                    </div>
+
+                    <div>
+                      <Label>Hero Section Background Image</Label>
+                      <div 
+                        className="mt-1.5 h-24 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => heroImageRef.current?.click()}
+                      >
+                        {form.heroImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.heroImageUrl)} alt="Hero Image" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md">Change Image</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-4 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadHeroImageMutation.isPending ? "Uploading..." : "Upload Hero Image"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={heroImageRef} className="hidden" accept="image/*" onChange={handleHeroFileChange} />
                     </div>
                   </div>
-                  <div className="space-y-1.5 mt-2">
-                    {(form.hotelHours || []).map((hourStr, idx) => {
-                      const parts = hourStr.split('|');
-                      const name = parts[0] || "";
-                      const val = parts[1] || "";
-                      return (
-                        <div key={idx} className="flex justify-between items-center bg-muted/30 px-3 py-1.5 rounded-xl border text-sm">
-                          <span><strong>{name}</strong>: {val}</span>
-                          <button 
-                            type="button" 
-                            onClick={() => setForm(f => ({ ...f, hotelHours: (f.hotelHours || []).filter((_, i) => i !== idx) }))}
-                            className="text-muted-foreground hover:text-destructive transition-colors"
-                          >
-                            <Trash2 className="size-4" />
-                          </button>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-                <div>
-                  <Label>Welcome Section Background Image</Label>
-                  <div 
-                    className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
-                    onClick={() => welcomeImageRef.current?.click()}
-                  >
-                    {form.welcomeImageUrl ? (
-                      <img src={getImageUrl(form.welcomeImageUrl)} alt="Welcome Image" className="h-full object-cover w-full" />
-                    ) : (
-                      <>
-                        <Upload className="size-4" /> 
-                        {uploadWelcomeImageMutation.isPending ? "Uploading..." : "Upload Welcome Image"}
-                      </>
-                    )}
-                  </div>
-                  <input type="file" ref={welcomeImageRef} className="hidden" accept="image/*" onChange={handleWelcomeFileChange} />
-                </div>
-                <div>
-                  <Label>Hero Section Background Image</Label>
-                  <div 
-                    className="mt-1 h-24 rounded-xl border-2 border-dashed flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/50 overflow-hidden relative"
-                    onClick={() => heroImageRef.current?.click()}
-                  >
-                    {form.heroImageUrl ? (
-                      <img src={getImageUrl(form.heroImageUrl)} alt="Hero Image" className="h-full object-cover w-full" />
-                    ) : (
-                      <>
-                        <Upload className="size-4" /> 
-                        {uploadHeroImageMutation.isPending ? "Uploading..." : "Upload Hero Image"}
-                      </>
-                    )}
-                  </div>
-                  <input type="file" ref={heroImageRef} className="hidden" accept="image/*" onChange={handleHeroFileChange} />
-                </div>
-                <div>
-                  <Label>Address</Label>
-                  <Textarea 
-                    value={form.address || ""} 
-                    onChange={e => setForm(f => ({...f, address: e.target.value}))}
-                    className="rounded-xl mt-1" 
-                  />
-                </div>
-                <div>
-                  <Label>About us description (Multiline support)</Label>
-                  <Textarea 
-                    value={form.aboutText || ""} 
-                    onChange={e => setForm(f => ({...f, aboutText: e.target.value}))}
-                    className="rounded-xl mt-1 min-h-[120px]" 
-                    placeholder="Enter details of your hotel, history, and experience..."
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Phone</Label>
-                    <Input 
-                      value={form.phone || ""} 
-                      onChange={e => setForm(f => ({...f, phone: e.target.value}))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                  <div>
-                    <Label>Email</Label>
-                    <Input 
-                      value={form.email || ""} 
-                      onChange={e => setForm(f => ({...f, email: e.target.value}))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                </div>
+                </Card>
 
-                <div className="border-t border-border pt-6 mt-4 space-y-4">
-                  <div className="flex items-center justify-between">
+                {/* Card 4: Taxes & Financials */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Coins className="size-4" />
+                    </div>
                     <div>
-                      <h3 className="font-serif text-lg text-gold">Chef Team Directory</h3>
-                      <p className="text-xs text-muted-foreground">Manage the chefs shown on the About page of your hotel.</p>
+                      <h3 className="font-serif text-base font-semibold">Taxes & Currency</h3>
+                      <p className="text-[11px] text-muted-foreground">Currency configuration and default tax rates.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Currency</Label>
+                        <Select 
+                          value={form.currency || "INR (₹)"} 
+                          onValueChange={(val) => setForm(prev => ({ ...prev, currency: val }))}
+                        >
+                          <SelectTrigger className="rounded-xl mt-1.5 bg-background/50">
+                            <SelectValue placeholder="Select Currency" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="INR (₹)">INR (₹)</SelectItem>
+                            <SelectItem value="USD ($)">USD ($)</SelectItem>
+                            <SelectItem value="EUR (€)">EUR (€)</SelectItem>
+                            <SelectItem value="GBP (£)">GBP (£)</SelectItem>
+                            <SelectItem value="AED (د.إ)">AED (د.إ)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Service charge %</Label>
+                        <Input 
+                          type="number"
+                          value={form.serviceChargePercent ?? 10} 
+                          onChange={(e) => setForm(prev => ({ ...prev, serviceChargePercent: parseFloat(e.target.value) || 0 }))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>CGST %</Label>
+                        <Input 
+                          type="number"
+                          value={form.cgstPercent ?? 9} 
+                          onChange={(e) => setForm(prev => ({ ...prev, cgstPercent: parseFloat(e.target.value) || 0 }))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        />
+                      </div>
+                      <div>
+                        <Label>SGST %</Label>
+                        <Input 
+                          type="number"
+                          value={form.sgstPercent ?? 9} 
+                          onChange={(e) => setForm(prev => ({ ...prev, sgstPercent: parseFloat(e.target.value) || 0 }))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Extra bed rate (per night)</Label>
+                      <Input 
+                        type="number"
+                        value={form.extraBedPrice ?? 500} 
+                        onChange={(e) => setForm(prev => ({ ...prev, extraBedPrice: parseFloat(e.target.value) || 0 }))}
+                        className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        placeholder="500"
+                      />
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Card 5: Waitlist Settings */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <Sliders className="size-4" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-base font-semibold">Waitlist Settings</h3>
+                      <p className="text-[11px] text-muted-foreground">Dining wait times and advance bookings configuration.</p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label>Wait time (min)</Label>
+                        <Input 
+                          type="number"
+                          value={form.waitlistEstimatedWaitMinutes ?? 22} 
+                          onChange={(e) => setForm(prev => ({ ...prev, waitlistEstimatedWaitMinutes: parseInt(e.target.value) || 0 }))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        />
+                      </div>
+                      <div>
+                        <Label>Min booking (%)</Label>
+                        <Input 
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={form.minimumAdvancePercent ?? 0} 
+                          onChange={(e) => setForm(prev => ({ ...prev, minimumAdvancePercent: parseFloat(e.target.value) || 0 }))}
+                          className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background" 
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <Label>Waitlist descriptive message</Label>
+                      <Textarea 
+                        value={form.waitlistMessage ?? "Based on average turnover of 48m over the last hour and 3 free tables."} 
+                        onChange={(e) => setForm(prev => ({ ...prev, waitlistMessage: e.target.value }))}
+                        className="rounded-xl mt-1.5 bg-background/50 focus-visible:bg-background min-h-[60px]" 
+                      />
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Card 6: Culinary Team Directory (Full Width at the bottom) */}
+              <div className="lg:col-span-12 mt-2">
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-5 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center justify-between pb-2 border-b border-border/40">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-1.5 rounded-lg bg-gold/10 text-gold">
+                        <Users className="size-4" />
+                      </div>
+                      <div>
+                        <h3 className="font-serif text-lg font-semibold text-gold">Chef Team Directory</h3>
+                        <p className="text-xs text-muted-foreground">Manage the chefs shown on the About page of your hotel.</p>
+                      </div>
                     </div>
                     <Button 
                       type="button"
@@ -533,29 +769,29 @@ function SettingsPage() {
                         setIsChefModalOpen(true);
                       }} 
                       size="sm" 
-                      className="rounded-xl flex items-center gap-1 bg-gold text-gold-foreground hover:bg-gold/90"
+                      className="rounded-xl flex items-center gap-1 bg-gold text-gold-foreground hover:bg-gold/90 transition-all hover:scale-105"
                     >
                       <Plus className="size-4" /> Add Chef
                     </Button>
                   </div>
 
                   {chefs.length === 0 ? (
-                    <div className="border border-dashed rounded-xl p-8 text-center text-sm text-muted-foreground">
+                    <div className="border border-dashed border-border/60 rounded-xl p-8 text-center text-sm text-muted-foreground bg-muted/5">
                       No chefs added yet. Click "Add Chef" to build your culinary team.
                     </div>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {chefs.map((c: Chef) => (
-                        <div key={c.id} className="flex gap-3 p-3 border rounded-xl items-start relative bg-card text-card-foreground">
+                        <div key={c.id} className="flex gap-3 p-3.5 border border-border/40 rounded-xl items-start relative bg-card/40 text-card-foreground hover:border-primary/20 transition-all group">
                           {c.imageUrl ? (
-                            <img src={getImageUrl(c.imageUrl)} alt={c.name} className="size-16 rounded-lg object-cover" />
+                            <img src={getImageUrl(c.imageUrl)} alt={c.name} className="size-16 rounded-lg object-cover border border-border/40" />
                           ) : (
-                            <div className="size-16 rounded-lg bg-muted flex items-center justify-center text-xs text-muted-foreground">No Photo</div>
+                            <div className="size-16 rounded-lg bg-muted/40 flex items-center justify-center text-[10px] text-muted-foreground border border-border/40">No Photo</div>
                           )}
                           <div className="flex-1 min-w-0">
                             <div className="font-medium truncate text-sm">{c.name}</div>
-                            {c.role && <div className="text-xs text-gold font-medium truncate">{c.role}</div>}
-                            {c.description && <p className="text-xs text-muted-foreground line-clamp-2 mt-1">{c.description}</p>}
+                            {c.role && <div className="text-xs text-gold font-medium truncate mt-0.5">{c.role}</div>}
+                            {c.description && <p className="text-[11px] text-muted-foreground line-clamp-2 mt-1">{c.description}</p>}
                           </div>
                           <div className="flex gap-1 shrink-0 ml-2">
                             <Button 
@@ -592,120 +828,10 @@ function SettingsPage() {
                       ))}
                     </div>
                   )}
-                </div>
-              </>
-            )}
-          </Card>
-
-          <Card className="p-6 rounded-2xl space-y-3">
-            <div className="font-serif text-lg">Tax & currency</div>
-            {isLoading ? (
-              <div className="animate-pulse space-y-4">
-                <div className="h-10 bg-muted rounded-xl"></div>
-                <div className="h-10 bg-muted rounded-xl"></div>
-                <div className="h-10 bg-muted rounded-xl"></div>
+                </Card>
               </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>Currency</Label>
-                    <Select 
-                      value={form.currency || "INR (₹)"} 
-                      onValueChange={(val) => setForm(prev => ({ ...prev, currency: val }))}
-                    >
-                      <SelectTrigger className="rounded-xl mt-1">
-                        <SelectValue placeholder="Select Currency" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="INR (₹)">INR (₹)</SelectItem>
-                        <SelectItem value="USD ($)">USD ($)</SelectItem>
-                        <SelectItem value="EUR (€)">EUR (€)</SelectItem>
-                        <SelectItem value="GBP (£)">GBP (£)</SelectItem>
-                        <SelectItem value="AED (د.إ)">AED (د.إ)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Service charge %</Label>
-                    <Input 
-                      type="number"
-                      value={form.serviceChargePercent ?? 10} 
-                      onChange={(e) => setForm(prev => ({ ...prev, serviceChargePercent: parseFloat(e.target.value) || 0 }))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <Label>CGST %</Label>
-                    <Input 
-                      type="number"
-                      value={form.cgstPercent ?? 9} 
-                      onChange={(e) => setForm(prev => ({ ...prev, cgstPercent: parseFloat(e.target.value) || 0 }))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                  <div>
-                    <Label>SGST %</Label>
-                    <Input 
-                      type="number"
-                      value={form.sgstPercent ?? 9} 
-                      onChange={(e) => setForm(prev => ({ ...prev, sgstPercent: parseFloat(e.target.value) || 0 }))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                </div>
-                <div>
-                  <Label>Extra bed rate (per night)</Label>
-                  <Input 
-                    type="number"
-                    value={form.extraBedPrice ?? 500} 
-                    onChange={(e) => setForm(prev => ({ ...prev, extraBedPrice: parseFloat(e.target.value) || 0 }))}
-                    className="rounded-xl mt-1" 
-                    placeholder="500"
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3 mt-4">
-                  <div>
-                    <Label>Estimated wait time (minutes)</Label>
-                    <Input 
-                      type="number"
-                      value={form.waitlistEstimatedWaitMinutes ?? 22} 
-                      onChange={(e) => setForm(prev => ({ ...prev, waitlistEstimatedWaitMinutes: parseInt(e.target.value) || 0 }))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                  <div>
-                    <Label>Minimum advance booking (%)</Label>
-                    <Input 
-                      type="number"
-                      min={0}
-                      max={100}
-                      value={form.minimumAdvancePercent ?? 0} 
-                      onChange={(e) => setForm(prev => ({ ...prev, minimumAdvancePercent: parseFloat(e.target.value) || 0 }))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                  <div className="col-span-2">
-                    <Label>Waitlist descriptive message</Label>
-                    <Textarea 
-                      value={form.waitlistMessage ?? "Based on average turnover of 48m over the last hour and 3 free tables."} 
-                      onChange={(e) => setForm(prev => ({ ...prev, waitlistMessage: e.target.value }))}
-                      className="rounded-xl mt-1" 
-                    />
-                  </div>
-                </div>
-                <Button 
-                  disabled={updateMutation.isPending}
-                  className="rounded-xl bg-primary text-primary-foreground mt-4" 
-                  onClick={handleSave}
-                >
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
-                </Button>
-              </>
-            )}
-          </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="policy">

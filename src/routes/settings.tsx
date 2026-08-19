@@ -34,6 +34,11 @@ function SettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const welcomeImageRef = useRef<HTMLInputElement>(null);
   const heroImageRef = useRef<HTMLInputElement>(null);
+  const roomsHeroImageRef = useRef<HTMLInputElement>(null);
+  const diningHeroImageRef = useRef<HTMLInputElement>(null);
+  const aboutHeroImageRef = useRef<HTMLInputElement>(null);
+  const contactHeroImageRef = useRef<HTMLInputElement>(null);
+  const galleryHeroImageRef = useRef<HTMLInputElement>(null);
   const chefImageRef = useRef<HTMLInputElement>(null);
 
   const { data: settings, isLoading } = useQuery({
@@ -163,6 +168,56 @@ function SettingsPage() {
     },
   });
 
+  const uploadRoomsHeroImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadRoomsHeroImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, roomsHeroImageUrl: data.roomsHeroImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Rooms hero image uploaded successfully");
+    },
+    onError: () => toast.error("Failed to upload Rooms hero image"),
+  });
+
+  const uploadDiningHeroImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadDiningHeroImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, diningHeroImageUrl: data.diningHeroImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Dining hero image uploaded successfully");
+    },
+    onError: () => toast.error("Failed to upload Dining hero image"),
+  });
+
+  const uploadAboutHeroImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadAboutHeroImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, aboutHeroImageUrl: data.aboutHeroImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("About hero image uploaded successfully");
+    },
+    onError: () => toast.error("Failed to upload About hero image"),
+  });
+
+  const uploadContactHeroImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadContactHeroImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, contactHeroImageUrl: data.contactHeroImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Contact hero image uploaded successfully");
+    },
+    onError: () => toast.error("Failed to upload Contact hero image"),
+  });
+
+  const uploadGalleryHeroImageMutation = useMutation({
+    mutationFn: (file: File) => settingsService.uploadGalleryHeroImage(file),
+    onSuccess: (data) => {
+      setForm(prev => ({ ...prev, galleryHeroImageUrl: data.galleryHeroImageUrl }));
+      queryClient.invalidateQueries({ queryKey: ["settings"] });
+      toast.success("Gallery hero image uploaded successfully");
+    },
+    onError: () => toast.error("Failed to upload Gallery hero image"),
+  });
+
   const createChefMutation = useMutation({
     mutationFn: (data: Chef) => chefService.createChef(data),
     onSuccess: () => {
@@ -226,6 +281,36 @@ function SettingsPage() {
   const handleHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       uploadHeroImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleRoomsHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadRoomsHeroImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleDiningHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadDiningHeroImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleAboutHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadAboutHeroImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleContactHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadContactHeroImageMutation.mutate(e.target.files[0]);
+    }
+  };
+
+  const handleGalleryHeroFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      uploadGalleryHeroImageMutation.mutate(e.target.files[0]);
     }
   };
 
@@ -525,7 +610,7 @@ function SettingsPage() {
                     </div>
                     <div>
                       <h3 className="font-serif text-base font-semibold">Brand Identity</h3>
-                      <p className="text-[11px] text-muted-foreground">Property branding assets and colors.</p>
+                      <p className="text-[11px] text-muted-foreground">Property branding logo, color, and welcome visual.</p>
                     </div>
                   </div>
 
@@ -594,28 +679,164 @@ function SettingsPage() {
                       </div>
                       <input type="file" ref={welcomeImageRef} className="hidden" accept="image/*" onChange={handleWelcomeFileChange} />
                     </div>
+                  </div>
+                </Card>
 
+                {/* Page Hero Images Card */}
+                <Card className="p-6 rounded-2xl border border-border/40 bg-card/30 backdrop-blur-sm space-y-4 hover:border-primary/20 transition-all duration-300">
+                  <div className="flex items-center gap-2.5 pb-2 border-b border-border/40">
+                    <div className="p-1.5 rounded-lg bg-primary/10 text-primary">
+                      <ImageIcon className="size-4" />
+                    </div>
                     <div>
-                      <Label>Hero Section Background Image</Label>
+                      <h3 className="font-serif text-base font-semibold">Page Hero Images</h3>
+                      <p className="text-[11px] text-muted-foreground">Configure background header images for each website page.</p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    {/* Home Hero */}
+                    <div>
+                      <Label className="text-xs">Home Page Hero</Label>
                       <div 
-                        className="mt-1.5 h-24 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-xs gap-2 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        className="mt-1.5 h-20 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-[10px] gap-1 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
                         onClick={() => heroImageRef.current?.click()}
                       >
                         {form.heroImageUrl ? (
                           <>
-                            <img src={getImageUrl(form.heroImageUrl)} alt="Hero Image" className="h-full object-cover w-full" />
+                            <img src={getImageUrl(form.heroImageUrl)} alt="Home Hero" className="h-full object-cover w-full" />
                             <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                              <span className="text-[10px] text-white bg-black/60 px-2 py-1 rounded-md">Change Image</span>
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded">Change</span>
                             </div>
                           </>
                         ) : (
                           <>
-                            <Upload className="size-4 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
-                            <span>{uploadHeroImageMutation.isPending ? "Uploading..." : "Upload Hero Image"}</span>
+                            <Upload className="size-3.5 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadHeroImageMutation.isPending ? "Uploading..." : "Upload"}</span>
                           </>
                         )}
                       </div>
                       <input type="file" ref={heroImageRef} className="hidden" accept="image/*" onChange={handleHeroFileChange} />
+                    </div>
+
+                    {/* Rooms Hero */}
+                    <div>
+                      <Label className="text-xs">Rooms Page Hero</Label>
+                      <div 
+                        className="mt-1.5 h-20 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-[10px] gap-1 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => roomsHeroImageRef.current?.click()}
+                      >
+                        {form.roomsHeroImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.roomsHeroImageUrl)} alt="Rooms Hero" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded">Change</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-3.5 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadRoomsHeroImageMutation.isPending ? "Uploading..." : "Upload"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={roomsHeroImageRef} className="hidden" accept="image/*" onChange={handleRoomsHeroFileChange} />
+                    </div>
+
+                    {/* Dining Hero */}
+                    <div>
+                      <Label className="text-xs">Dining Page Hero</Label>
+                      <div 
+                        className="mt-1.5 h-20 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-[10px] gap-1 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => diningHeroImageRef.current?.click()}
+                      >
+                        {form.diningHeroImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.diningHeroImageUrl)} alt="Dining Hero" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded">Change</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-3.5 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadDiningHeroImageMutation.isPending ? "Uploading..." : "Upload"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={diningHeroImageRef} className="hidden" accept="image/*" onChange={handleDiningHeroFileChange} />
+                    </div>
+
+                    {/* About Hero */}
+                    <div>
+                      <Label className="text-xs">About Page Hero</Label>
+                      <div 
+                        className="mt-1.5 h-20 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-[10px] gap-1 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => aboutHeroImageRef.current?.click()}
+                      >
+                        {form.aboutHeroImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.aboutHeroImageUrl)} alt="About Hero" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded">Change</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-3.5 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadAboutHeroImageMutation.isPending ? "Uploading..." : "Upload"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={aboutHeroImageRef} className="hidden" accept="image/*" onChange={handleAboutHeroFileChange} />
+                    </div>
+
+                    {/* Contact Hero */}
+                    <div>
+                      <Label className="text-xs">Contact Page Hero</Label>
+                      <div 
+                        className="mt-1.5 h-20 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-[10px] gap-1 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => contactHeroImageRef.current?.click()}
+                      >
+                        {form.contactHeroImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.contactHeroImageUrl)} alt="Contact Hero" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded">Change</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-3.5 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadContactHeroImageMutation.isPending ? "Uploading..." : "Upload"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={contactHeroImageRef} className="hidden" accept="image/*" onChange={handleContactHeroFileChange} />
+                    </div>
+
+                    {/* Gallery Hero */}
+                    <div>
+                      <Label className="text-xs">Gallery Page Hero</Label>
+                      <div 
+                        className="mt-1.5 h-20 rounded-xl border-2 border-dashed border-border/65 flex flex-col items-center justify-center text-[10px] gap-1 text-muted-foreground cursor-pointer hover:bg-muted/30 transition-all overflow-hidden relative group"
+                        onClick={() => galleryHeroImageRef.current?.click()}
+                      >
+                        {form.galleryHeroImageUrl ? (
+                          <>
+                            <img src={getImageUrl(form.galleryHeroImageUrl)} alt="Gallery Hero" className="h-full object-cover w-full" />
+                            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                              <span className="text-[9px] text-white bg-black/60 px-1.5 py-0.5 rounded">Change</span>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <Upload className="size-3.5 text-muted-foreground/80 group-hover:scale-110 transition-transform" /> 
+                            <span>{uploadGalleryHeroImageMutation.isPending ? "Uploading..." : "Upload"}</span>
+                          </>
+                        )}
+                      </div>
+                      <input type="file" ref={galleryHeroImageRef} className="hidden" accept="image/*" onChange={handleGalleryHeroFileChange} />
                     </div>
                   </div>
                 </Card>
@@ -1148,7 +1369,7 @@ function SettingsPage() {
               {galleryItems.map((item) => (
                 <Card key={item.id} className="overflow-hidden group relative">
                   {item.imageUrl ? (
-                    <img src={item.imageUrl.includes('/attachments') ? getImageUrl(item.imageUrl) : getImageUrl(`/attachments/gallery/${item.imageUrl}`)} alt={item.description || "Gallery"} className="w-full h-40 object-cover" />
+                    <img src={item.imageUrl.startsWith('http') ? item.imageUrl : (item.imageUrl.includes('/attachments') ? getImageUrl(item.imageUrl) : getImageUrl(`/attachments/gallery/${item.imageUrl}`))} alt={item.description || "Gallery"} className="w-full h-40 object-cover" />
                   ) : (
                     <div className="w-full h-40 bg-muted flex items-center justify-center">No Image</div>
                   )}

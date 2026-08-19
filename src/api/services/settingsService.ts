@@ -8,6 +8,11 @@ export interface GeneralSettings {
   logoBackgroundColor?: string | null;
   welcomeImageUrl?: string | null;
   heroImageUrl?: string | null;
+  roomsHeroImageUrl?: string | null;
+  diningHeroImageUrl?: string | null;
+  aboutHeroImageUrl?: string | null;
+  contactHeroImageUrl?: string | null;
+  galleryHeroImageUrl?: string | null;
   aboutText?: string | null;
   chefName?: string | null;
   chefDescription?: string | null;
@@ -72,6 +77,61 @@ export const settingsService = {
     const formData = new FormData();
     formData.append('file', file);
     const res = await fetch(`${BASE_URL}/api/Settings/hero-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadRoomsHeroImage: async (file: File): Promise<{ roomsHeroImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/Settings/rooms-hero-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadDiningHeroImage: async (file: File): Promise<{ diningHeroImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/Settings/dining-hero-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadAboutHeroImage: async (file: File): Promise<{ aboutHeroImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/Settings/about-hero-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadContactHeroImage: async (file: File): Promise<{ contactHeroImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/Settings/contact-hero-image`, {
+      method: 'POST',
+      body: formData,
+    });
+    if (!res.ok) throw new Error('Upload failed');
+    return res.json();
+  },
+
+  uploadGalleryHeroImage: async (file: File): Promise<{ galleryHeroImageUrl: string }> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${BASE_URL}/api/Settings/gallery-hero-image`, {
       method: 'POST',
       body: formData,
     });

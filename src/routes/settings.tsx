@@ -19,6 +19,7 @@ import { useTheme } from "@/lib/theme";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { settingsService, GeneralSettings } from "@/api/services/settingsService";
 import { chefService, Chef } from "@/api/services/chefService";
+import { galleryService, GalleryItem } from "@/api/services/galleryService";
 import { BASE_URL } from "@/api/apiClient";
 import { getImageUrl } from "@/lib/utils";
 
@@ -73,6 +74,34 @@ function SettingsPage() {
   const [chefFormRole, setChefFormRole] = useState("");
   const [chefFormDescription, setChefFormDescription] = useState("");
   const [chefFormImageUrl, setChefFormImageUrl] = useState("");
+
+  // Gallery state
+  const { data: galleryItems = [], refetch: refetchGallery } = useQuery({
+    queryKey: ["gallery"],
+    queryFn: () => galleryService.getGalleryItems()
+  });
+  const [galleryDesc, setGalleryDesc] = useState("");
+  const [galleryFile, setGalleryFile] = useState<File | null>(null);
+
+  const createGalleryMutation = useMutation({
+    mutationFn: ({ desc, file }: { desc: string, file: File | null }) => galleryService.createGalleryItem(desc, file),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+      toast.success("Gallery item added");
+      setGalleryDesc("");
+      setGalleryFile(null);
+    },
+    onError: () => toast.error("Failed to add gallery item")
+  });
+
+  const deleteGalleryMutation = useMutation({
+    mutationFn: (id: number) => galleryService.deleteGalleryItem(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["gallery"] });
+      toast.success("Gallery item deleted");
+    },
+    onError: () => toast.error("Failed to delete gallery item")
+  });
 
   // Sync editing permissions when selected role changes
   useEffect(() => {
@@ -214,6 +243,7 @@ function SettingsPage() {
           <TabsTrigger value="policy" className="rounded-lg">Cancellation policy</TabsTrigger>
 
           <TabsTrigger value="roles" className="rounded-lg">Roles & permissions</TabsTrigger>
+          <TabsTrigger value="gallery" className="rounded-lg">Gallery</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="grid md:grid-cols-2 gap-4">
@@ -968,6 +998,48 @@ function SettingsPage() {
               )}
             </Card>
           </div>
+        </TabsContent>
+        <TabsContent value="gallery">
+          <Card className="p-6 rounded-2xl">
+            <h2 className="font-serif text-2xl mb-4">Gallery Management</h2>
+            <div className="grid md:grid-cols-2 gap-6 mb-8 border-b pb-8">
+              <div className="space-y-4">
+                <Label>Add New Photo</Label>
+                <div className="space-y-2">
+                  <Input type="file" accept="image/*" onChange={e => setGalleryFile(e.target.files?.[0] || null)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Description</Label>
+                  <Textarea value={galleryDesc} onChange={e => setGalleryDesc(e.target.value)} placeholder="Image description..." />
+                </div>
+                <Button onClick={() => createGalleryMutation.mutate({ desc: galleryDesc, file: galleryFile })} disabled={!galleryFile || createGalleryMutation.isPending} className="bg-gold text-gold-foreground hover:bg-gold/90">
+                  {createGalleryMutation.isPending ? "Uploading..." : "Upload to Gallery"}
+                </Button>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+              {galleryItems.map((item) => (
+                <Card key={item.id} className="overflow-hidden group relative">
+                  {item.imageUrl ? (
+                    <img src={getImageUrl(item.imageUrl)} alt={item.description || "Gallery"} className="w-full h-40 object-cover" />
+                  ) : (
+                    <div className="w-full h-40 bg-muted flex items-center justify-center">No Image</div>
+                  )}
+                  <div className="p-3 text-sm">
+                    {item.description || <span className="text-muted-foreground italic">No description</span>}
+                  </div>
+                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Button size="icon" variant="destructive" className="h-8 w-8" onClick={() => {
+                      if(confirm("Delete this photo?")) deleteGalleryMutation.mutate(item.id!);
+                    }}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </Card>
         </TabsContent>
       </Tabs>
 

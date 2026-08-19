@@ -1022,7 +1022,7 @@ function SettingsPage() {
               {galleryItems.map((item) => (
                 <Card key={item.id} className="overflow-hidden group relative">
                   {item.imageUrl ? (
-                    <img src={getImageUrl(item.imageUrl)} alt={item.description || "Gallery"} className="w-full h-40 object-cover" />
+                    <img src={item.imageUrl.includes('/attachments') ? getImageUrl(item.imageUrl) : getImageUrl(`/attachments/gallery/${item.imageUrl}`)} alt={item.description || "Gallery"} className="w-full h-40 object-cover" />
                   ) : (
                     <div className="w-full h-40 bg-muted flex items-center justify-center">No Image</div>
                   )}
